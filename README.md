@@ -7,7 +7,7 @@
 - 状態: 準備中。言語は未決（[ADR 0001](docs/decisions/0001-declaration-and-origin.md) の後、ADR 0003 以降で決める）
 - 出自: 出自は gunji-m/tfdata-api の main `4a25bc93e8dba5b8bce866d6707bce6415ec61da`。判断の履歴はそちら。
 - LICENSE: 未決（本人が選ぶ）
-- 進行 Issue: 作成後に追記
+- 進行 Issue: [#1 sakuforge 立ち上げの進行と再開入口](https://github.com/gunji-m/sakuforge/issues/1)
 
 ## 文書
 
