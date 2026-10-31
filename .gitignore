@@ -1,0 +1,19 @@
+# 銘柄マスター JSON の置き場（リポジトリに入れない。docs/external-data-policy.md）
+/data/stock-master/
+
+# 秘密情報
+.env*
+*.pem
+*.key
+/secrets/
+
+# 実データ（リポジトリに置かない）
+/local-data/
+
+# OS・editor
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
