@@ -2,7 +2,7 @@
 
 ## Scope and source of truth
 
-- No application code exists yet. The language is undecided and will be chosen in ADR 0003 or later.
+- No application code exists yet. The language is TypeScript (`docs/decisions/0003-language-typescript.md`). The app is placed on Vercel with Next.js, and CSV inspection and aggregation run in the browser (`docs/decisions/0004-vercel-nextjs-browser-side.md`). The design is in `docs/design.md`.
 - `docs/` and the ADRs under `docs/decisions/` are the source of truth. Read `README.md` and the relevant files under `docs/` before making changes.
 - The declaration and its axes are in `docs/decisions/0001-declaration-and-origin.md`. Judge every change against them; when in doubt, choose the option less likely to cause problems.
 - This repository is public (`docs/decisions/0002-public-repository.md`). Never commit or post secrets, invitation passphrases, real data, stock master JSON, the content of individual replies from the Tokyo Stock Exchange, or personally identifying information.
@@ -11,7 +11,9 @@
 ## Architecture
 
 - Treat `docs/domain-rules.md` and `docs/input-trust-principles.md` as the source of truth for domain behavior and input handling.
-- Write validation and aggregation as pure functions in a single language. Concrete architecture rules will be added after the language is decided.
+- Write validation and aggregation as pure functions in TypeScript, with no side effects (no storage, network, clock, randomness, or logging). Put them in `packages/core`; it must not depend on the UI, React, or Next.js.
+- Pass decimal values (amounts, share counts, composition ratios) as strings in and out of `packages/core`. Do not use binary floating point (`number`) for them.
+- Do not send CSV content to the server. Server functions are limited to invitation checks and stock master distribution (ADR 0004).
 
 ## Git workflow
 
@@ -48,11 +50,13 @@ Repository-specific notes:
 
 ## API and security rules
 
-- Follow `docs/input-trust-principles.md` and `docs/external-data-policy.md`. Concrete rules will be added after the language is decided.
+- Follow `docs/input-trust-principles.md` and `docs/external-data-policy.md`.
+- Validate every input against `docs/input-trust-principles.md`, including the CSV, the stock master JSON received in the browser, and every value a server function receives. Browser-side inspection is not a security boundary for the server.
+- Return only fixed codes and fixed messages to users; do not embed exception strings, cell values, or file names.
 
 ## Required validation
 
-Validation commands will be defined after the language is decided.
+Validation commands will be defined as pnpm script names in the first implementation PR and added here.
 Report commands exactly as run and do not claim unexecuted checks passed.
 
 ## Code review rules
