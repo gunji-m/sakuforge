@@ -6,7 +6,6 @@
 
 - 状態: 準備中。言語は未決（[ADR 0001](docs/decisions/0001-declaration-and-origin.md) の後、ADR 0003 以降で決める）
 - 出自: 出自は gunji-m/tfdata-api の main `4a25bc93e8dba5b8bce866d6707bce6415ec61da`。判断の履歴はそちら。
-- LICENSE: 未決（本人が選ぶ）
 - 進行 Issue: [#1 sakuforge 立ち上げの進行と再開入口](https://github.com/gunji-m/sakuforge/issues/1)
 
 ## 文書
@@ -20,3 +19,9 @@
 | [docs/git-workflow.md](docs/git-workflow.md) | branch、PR、merge の規則 |
 | [AGENTS.md](AGENTS.md) | agent 向けの作業規則 |
 | [SECURITY.md](SECURITY.md) | 脆弱性の連絡方法 |
+
+## ライセンスと免責
+
+コードは [MIT License](LICENSE) で公開しています。ライセンスはコードに適用されるもので、SakuForge の名称・ロゴ・ドメイン `sakuforge.fyi` の使用を許諾するものではありません。
+
+SakuForge は投資助言を提供しません。構成比や配当見込みなどの計算結果の正確性・完全性は保証せず、投資判断は利用者自身の責任で行ってください。
