@@ -92,7 +92,7 @@
 ## 5. 未知の証券コード
 
 - CSV 構造と全証券コードの形式が正しい場合だけ照合する。形式不正や5桁未対応が1件でもあれば照合しない（「未実施」）
-- 未知コードは重複を除いて文字列昇順、最大50件。総数と省略の有無を併記する。無ければ空の一覧と総数 0
+- 未知コードは重複を除いて文字列昇順で、全件返す。総数を併記する。無ければ空の一覧と総数 0
 - 所見には位置なしの `stock_code_unknown` を1件だけ足す。severity は `warning` で、`valid` は false にしない。
   未知コードを行番号、数量、価格、利用者と結び付けない
 - 未知コードの銘柄も CSV を拒否する理由にしない。その行は構成では「未分類」に入れ、評価額と年間配当見込みの
@@ -114,22 +114,22 @@
 
 | code | 位置 | 意味 | 固定 message |
 | --- | --- | --- | --- |
-| `csv_empty` | なし | 空または空行のみ | CSVファイルが空です。 |
-| `csv_control_character` | なし／行 | NUL 等の禁止文字 | CSVに使用できない制御文字が含まれています。 |
-| `csv_encoding_unsupported` | なし | decode できない | CSVの文字コードはUTF-8またはCP932を使用してください。 |
-| `csv_structure_invalid` | なし／行 | CSV 構文の不正 | CSVの構造が不正です。 |
-| `csv_header_unsupported` | なし | ヘッダー・列順・profile の不一致 | CSVヘッダーまたは列配置が対応形式と一致しません。 |
-| `csv_data_rows_empty` | なし | 検査できるデータ行が無い | 検査可能な資産データ行がありません。 |
-| `csv_column_count_invalid` | 行 | 22列と不一致 | CSVレコードの列数が対応形式と一致しません。 |
-| `stock_code_invalid` | 行・列・field | 証券コード形式の不正 | 証券コードが不正です。 |
-| `stock_code_unsupported` | 行・列・field | 5桁数値コード | この証券コード形式は現在未対応です。 |
-| `custody_type_invalid` | 行・列・field | 預り区分の不正 | 預り区分が不正です。 |
-| `holding_count_invalid` | 行・列・field | 保有株数の不正 | 保有株数が不正です。 |
-| `purchase_price_invalid` | 行・列・field | 取得単価の不正 | 取得単価が不正です。 |
-| `current_price_invalid` | 行・列・field | 現在値の不正 | 現在値が不正です。 |
-| `dividend_per_share_invalid` | 行・列・field | 配当の単一値／範囲の不正 | 予想1株配当が不正です。 |
-| `asset_key_duplicated` | 後続の行 | 証券コードと預り区分の組合せの重複 | 証券コードと預り区分の組合せが重複しています。 |
-| `stock_code_unknown` | なし | 銘柄マスターに無いコードがある（warning） | 銘柄マスターに存在しない証券コードがあります。 |
+| `csv_empty` | なし | 空または空行のみ | CSVファイルが空です。保有資産のCSVを選んでください。 |
+| `csv_control_character` | なし／行 | NUL 等の禁止文字 | CSVに使用できない文字が含まれています。 |
+| `csv_encoding_unsupported` | なし | decode できない | CSVの文字コードを読み取れません。UTF-8かShift_JISが必要です。 |
+| `csv_structure_invalid` | なし／行 | CSV 構文の不正 | CSVの形式を読み取れません。引用符（"）の対応を確認してください。 |
+| `csv_header_unsupported` | なし | ヘッダー・列順・profile の不一致 | 対応していない形式のCSVです。国内株式（現物）の保有資産CSVを選んでください。 |
+| `csv_data_rows_empty` | なし | 検査できるデータ行が無い | 保有銘柄の行がありません。 |
+| `csv_column_count_invalid` | 行 | 22列と不一致 | 列の数が見出しと合わない行があります。 |
+| `stock_code_invalid` | 行・列・field | 証券コード形式の不正 | 証券コードを読み取れません。4文字の証券コードが必要です。 |
+| `stock_code_unsupported` | 行・列・field | 5桁数値コード | 5桁の証券コードには、まだ対応していません。 |
+| `custody_type_invalid` | 行・列・field | 預り区分の不正 | 預り区分を読み取れません。1〜32文字が必要です。 |
+| `holding_count_invalid` | 行・列・field | 保有株数の不正 | 保有株数を読み取れません。0以上の数値が必要です。 |
+| `purchase_price_invalid` | 行・列・field | 取得単価の不正 | 取得単価を読み取れません。0以上の数値が必要です。 |
+| `current_price_invalid` | 行・列・field | 現在値の不正 | 現在値を読み取れません。0以上の数値が必要です。 |
+| `dividend_per_share_invalid` | 行・列・field | 配当の単一値／範囲の不正 | 予想1株配当を読み取れません。数値か範囲（例: 40 ~ 50）が必要です。 |
+| `asset_key_duplicated` | 後続の行 | 証券コードと預り区分の組合せの重複 | 同じ証券コードと預り区分の行が重複しています。 |
+| `stock_code_unknown` | なし | 銘柄マスターに無いコードがある（warning） | 銘柄マスターに無い証券コードがあります。該当銘柄は「未分類」として集計しました。 |
 
 ### 並べ方と上限
 
@@ -176,7 +176,8 @@
 - 予想1株配当の桁（整数部6桁・小数4桁）
 - 銘柄マスターに無い銘柄の扱い（[5](#5-未知の証券コード)、warning）
 - 33業種の構成（[7](#7-17業種と33業種の構成)）と年間配当見込み（[8](#8-年間配当見込み)）
-- 所見 code 16件。固定 message の文言は #9 で見直す
+- 所見 code 16件と固定 message の文言（2026-11-01 に利用者向けの文言へ改めた）
+- 未知コードの一覧を全件返すこと（[5](#5-未知の証券コード)）
 - 入力の上限値。サイズは #20 で見直す可能性がある
 
 ## 10. tfdata-api との違い
@@ -186,5 +187,7 @@
 | 項目 | tfdata-api | sakuforge |
 | --- | --- | --- |
 | 銘柄マスターに無い銘柄 | `stock_code_unknown` は error で、`valid` が false になる | warning で `valid` は true。その銘柄は「未分類」に入る |
+| 未知コードの一覧 | 最大 50 件で、省略の有無を併記 | 全件 |
+| 固定 message | 6節の文言と異なる（tfdata-api 由来の文言） | 6節の文言 |
 | 33業種の構成 | 無い | 17業種と同じ規則で集計する |
 | 年間配当見込み | 計算規則が無い | [8](#8-年間配当見込み)の規則で、下限と上限の2値を返す |
