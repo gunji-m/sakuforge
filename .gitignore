@@ -10,6 +10,12 @@
 # 実データ（リポジトリに置かない）
 /local-data/
 
+# Node.js / TypeScript
+node_modules/
+coverage/
+dist/
+*.tsbuildinfo
+
 # OS・editor
 .DS_Store
 Thumbs.db

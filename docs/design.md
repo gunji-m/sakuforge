@@ -55,14 +55,14 @@ decode（UTF-8 と CP932）は核の中に置く案です。`TextDecoder` は No
 - 結果 JSON への変換と、出典・基準日の付加
 - ログに内容を出さないこと（成否、件数、処理時間、固定 code だけ）
 
-## 3. パッケージ構成の案
+## 3. パッケージ構成
 
-pnpm workspace で2つに分けます。
+pnpm workspace は次の2つのパッケージで構成します。
 
 | パッケージ | 中身 | 依存してよいもの |
 | --- | --- | --- |
-| `packages/core` | CSV の検査、集計、型 | 10進演算と入力検証の最小限の依存だけ。React、Next.js、実行環境固有の API に依存しない |
-| `apps/web` | Next.js（App Router）の画面と、サーバー関数（招待の確認、検査と集計） | `packages/core` |
+| `@sakuforge/core`（`packages/core`） | CSV の検査、集計、型 | 10進演算と入力検証の最小限の依存だけ。React、Next.js、実行環境固有の API に依存しない |
+| `@sakuforge/web`（`apps/web`） | Next.js（App Router）の画面と、サーバー関数（招待の確認、検査と集計） | `@sakuforge/core` |
 
 銘柄マスター JSON を生成する手元の道具をリポジトリに置くかどうかは、実装の PR で決めます。置く場合も
 生成物は `.gitignore` の `data/stock-master/` に出し、リポジトリに入れません。

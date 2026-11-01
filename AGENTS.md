@@ -57,7 +57,12 @@ Repository-specific notes:
 
 ## Required validation
 
-Validation commands will be defined as pnpm script names in the first implementation PR and added here.
+Install dependencies with `pnpm install --frozen-lockfile`, then run these commands from the repository root:
+
+- `pnpm lint`
+- `pnpm typecheck`
+- `pnpm test`
+
 Report commands exactly as run and do not claim unexecuted checks passed.
 
 ## Code review rules
