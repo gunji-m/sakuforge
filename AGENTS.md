@@ -41,6 +41,21 @@ Repository-specific notes:
 - Use `データ待ち` when waiting for external data such as the monthly TSE listed-stock file.
 - Do not write personally identifying information in Issues. Paste only synthetic data.
 
+## Development layers
+
+The canonical structure is `templates/development-layers.md` in gunji-m/agent-workflows (synced 2026-11-02). This section holds only the key points and repository-specific notes.
+
+- The α layer (planning) files Issues. The β layer (orchestration) picks them up, instructs the implementation layer, verifies the results, and opens PRs. Report in PRs, Issue comments, and the current state of the progress Issue.
+- The β layer picks up only development or validation Issues labeled `次の作業`, and switches the label to `作業中` when it starts.
+- Send routine work to the implementation layer's lighter setting, and implementation that involves design decisions to the stronger setting.
+- If one Issue needs more than three retries by the implementation layer, add `ユーザー確認待ち` and stop. When a design decision is needed, also add `ユーザー確認待ち` to return the Issue to the α layer. Write the reason and the resume condition in the Issue's resume notes.
+- Apply the same rules to direct requests from the developer.
+
+Repository-specific notes:
+
+- The β layer may proceed without confirmation on implementation and tests in `packages/core` within an Issue's completion criteria, tests with synthetic data, documentation fixes that do not change rules, and Issue status and comment updates.
+- Human approval is required for `docs/decisions/`, `docs/domain-rules.md`, `docs/input-trust-principles.md`, `docs/external-data-policy.md`, this file, adding or updating dependencies, CI and `.github/`, invitation checks and secrets, the stock master, and Vercel settings.
+
 ## Change policy
 
 - Make the smallest change that satisfies the request.
