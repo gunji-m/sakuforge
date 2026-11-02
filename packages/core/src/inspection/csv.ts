@@ -42,18 +42,27 @@ type CsvParseResult =
 export function parseCsv(text: string, limits: InspectionLimits): CsvParseResult {
   const records: CsvRecord[] = [];
   let cells: string[] = [];
-  let cell = "";
+  let cellStart = 0;
+  let cellParts: string[] = [];
   let state: State = "start";
   let line = 1;
   let row = 1;
   let active = false;
-  const finishRecord = () => {
+  const finishCell = (end: number) => {
+    const tail = text.slice(cellStart, state === "closed" ? end - 1 : end);
+    if (cellParts.length === 0) cells.push(tail);
+    else {
+      cellParts.push(tail);
+      cells.push(cellParts.join(""));
+      cellParts = [];
+    }
+  };
+  const finishRecord = (end: number) => {
     if (active) {
-      cells.push(cell);
+      finishCell(end);
       records.push({ row, cells });
     }
     cells = [];
-    cell = "";
     active = false;
   };
   for (let i = 0; i < text.length; i++) {
@@ -70,23 +79,29 @@ export function parseCsv(text: string, limits: InspectionLimits): CsvParseResult
     }
     if (newline) {
       const crlf = char === "\r" && text.charAt(i + 1) === "\n";
-      if (state === "quoted") cell += crlf ? "\r\n" : char;
-      else finishRecord();
+      if (state !== "quoted") finishRecord(i);
       if (crlf) i++;
       line++;
-      if (state !== "quoted") row = line;
+      if (state !== "quoted") {
+        row = line;
+        cellStart = i + 1;
+      }
     } else if (char === "," && state !== "quoted") {
       if (cells.length + 2 > limits.maxColumns) return { kind: "rejected", reason: "maxColumns" };
-      cells.push(cell);
-      cell = "";
-    } else if (char !== '"' || state === "closed") {
-      cell += char;
+      finishCell(i);
+      cellStart = i + 1;
+    } else if (char === '"' && state === "start") {
+      cellStart = i + 1;
+    } else if (char === '"' && state === "closed") {
+      // Include the first quote of an escaped pair, then skip the second quote.
+      cellParts.push(text.slice(cellStart, i));
+      cellStart = i + 1;
     }
     state = next;
   }
   if (state === "quoted") {
     return { kind: "invalid", row, rowsScanned: Math.max(0, records.length - 1) };
   }
-  finishRecord();
+  finishRecord(text.length);
   return { kind: "parsed", records };
 }

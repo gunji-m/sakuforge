@@ -12,6 +12,14 @@ import {
   type StructureResult,
 } from "./types";
 
+function trimAsciiSpaces(text: string): string {
+  let start = 0;
+  let end = text.length;
+  while (start < end && text.charAt(start) === " ") start++;
+  while (end > start && text.charAt(end - 1) === " ") end--;
+  return text.slice(start, end);
+}
+
 /** Structure only. Records are internal input to later value checks, never an API response. */
 export function checkCsvStructure(
   input: Uint8Array | string,
@@ -62,10 +70,10 @@ export function checkCsvStructure(
   const [header, ...records] = parsed.records;
   const rowsScanned = records.length;
   if (header === undefined) return result(encoding, [createFinding("csv_empty")]);
-  // Remove only ASCII spaces (U+0020) at cell edges; no other whitespace or normalization.
+  // Scan cell edges once to remove only ASCII spaces (U+0020), without normalization.
   if (
     header.cells.length !== HOLDINGS_HEADER.length ||
-    !HOLDINGS_HEADER.every((expected, i) => header.cells[i]?.replace(/^ +| +$/g, "") === expected)
+    !HOLDINGS_HEADER.every((expected, i) => trimAsciiSpaces(header.cells[i] ?? "") === expected)
   ) {
     return result(encoding, [createFinding("csv_header_unsupported")], rowsScanned);
   }

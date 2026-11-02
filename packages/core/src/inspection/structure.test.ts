@@ -173,6 +173,14 @@ test.each(["\t", "\u3000", "\u00A0"])("header padding with %j is not removed", (
   expect(checked(`${padded}\n${data}`).findings).toEqual([createFinding("csv_header_unsupported")]);
 });
 
+test("header with a long internal ASCII space run is unsupported", () => {
+  const cells = [...HOLDINGS_HEADER];
+  const unsupportedHeader = [`銘柄${" ".repeat(100000)}x`, ...cells.slice(1)].join(",");
+  expect(checked(`${unsupportedHeader}\n${data}`).findings).toEqual([
+    createFinding("csv_header_unsupported"),
+  ]);
+});
+
 test.each([
   header.replace("銘柄", "別名"),
   header.replace("予想PER", "予想per"),
@@ -241,6 +249,27 @@ test("byte limit accepts exactly the limit and rejects +1 before decoding or sca
     kind: "rejected",
     reason: "maxBytes",
   });
+});
+
+test.each([false, true])("10 MiB input with a single large cell, quoted=%s", (quoted) => {
+  const prefix = utf8(`${header}\n`);
+  const bytes = new Uint8Array(DEFAULT_INSPECTION_LIMITS.maxBytes);
+  bytes.set(prefix);
+  bytes.fill(quoted ? 0x22 : 0x78, prefix.length);
+  const cellBytes = bytes.length - prefix.length;
+  // Keep opening/closing quotes and escaped pairs balanced for either byte-length parity.
+  if (quoted && cellBytes % 2 !== 0) bytes[prefix.length + 1] = 0x78;
+
+  const result = checked(bytes);
+  expect(result.encoding).toBe("utf-8");
+  expect(result.rowsScanned).toBe(1);
+  expect(result.records).toHaveLength(1);
+  expect(result.records[0]?.row).toBe(2);
+  expect(result.records[0]?.cells).toHaveLength(1);
+  expect(result.records[0]?.cells[0]?.length).toBe(
+    quoted ? Math.floor((cellBytes - 1) / 2) : cellBytes,
+  );
+  expect(result.findings).toEqual([createFinding("csv_column_count_invalid", { row: 2 })]);
 });
 
 test("data record limit ignores header, blanks and quoted newlines; accepts boundary and rejects +1", () => {
