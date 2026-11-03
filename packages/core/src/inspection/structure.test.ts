@@ -50,7 +50,7 @@ test("profile and required column headings match section 2", () => {
   expect(Object.keys(HOLDINGS_COLUMNS)).toEqual(FINDING_FIELDS);
   expect(Object.isFrozen(HOLDINGS_COLUMNS)).toBe(true);
   expect(DEFAULT_INSPECTION_LIMITS).toEqual({
-    maxBytes: 10 * 1024 * 1024,
+    maxBytes: 4 * 1024 * 1024,
     maxDataRows: 10000,
     maxColumns: 100,
     maxReturnedFindings: 200,
@@ -296,13 +296,13 @@ test("byte limit accepts exactly the limit and rejects +1 before decoding or sca
     kind: "rejected",
     reason: "maxBytes",
   });
-  expect(checkCsvStructure(new Uint8Array(10 * 1024 * 1024 + 1))).toEqual({
+  expect(checkCsvStructure(new Uint8Array(4 * 1024 * 1024 + 1))).toEqual({
     kind: "rejected",
     reason: "maxBytes",
   });
 });
 
-test.each([false, true])("10 MiB input with a single large cell, quoted=%s", (quoted) => {
+test.each([false, true])("4 MiB input with a single large cell, quoted=%s", (quoted) => {
   const prefix = utf8(`${header}\n`);
   const bytes = new Uint8Array(DEFAULT_INSPECTION_LIMITS.maxBytes);
   bytes.set(prefix);
