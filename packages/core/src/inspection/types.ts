@@ -113,7 +113,13 @@ export interface CsvRecord {
 }
 export interface LimitRejection {
   readonly kind: "rejected";
-  readonly reason: "maxBytes" | "maxDataRows" | "maxColumns" | "invalid_input" | "invalid_limits";
+  readonly reason:
+    | "maxBytes"
+    | "maxDataRows"
+    | "maxColumns"
+    | "invalid_input"
+    | "invalid_limits"
+    | "invalid_stock_master";
 }
 /** Internal intermediate data. Never send records to the browser or logs. No value validation yet. */
 export interface StructureInspection extends FindingSummary {
@@ -125,3 +131,29 @@ export interface StructureInspection extends FindingSummary {
   readonly rowsScanned: number;
 }
 export type StructureResult = LimitRejection | StructureInspection;
+
+export interface StockMasterSector {
+  readonly code: string;
+  readonly name: string;
+}
+export interface StockMasterEntry {
+  readonly sector17: StockMasterSector | null;
+  readonly sector33: StockMasterSector | null;
+}
+/** Validated by the server function. Inspection uses only has(), never sector values. */
+export type StockMaster = ReadonlyMap<string, StockMasterEntry>;
+export type StockCodeMatch =
+  | { readonly status: "not_checked" }
+  | {
+      readonly status: "checked";
+      readonly unknownCodes: readonly string[];
+      readonly unknownCount: number;
+    };
+export interface HoldingsInspection extends FindingSummary {
+  readonly kind: "inspection";
+  readonly valid: boolean;
+  readonly profile: typeof HOLDINGS_PROFILE | null;
+  readonly encoding: CsvEncoding;
+  readonly rowsScanned: number;
+  readonly stockCodeMatch: StockCodeMatch;
+}

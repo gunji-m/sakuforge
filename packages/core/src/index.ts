@@ -1,4 +1,5 @@
 export { createFinding, summarizeFindings } from "./inspection/findings";
+export { inspectHoldingsCsv } from "./inspection/inspect";
 export { checkCsvStructure } from "./inspection/structure";
 export type {
   CsvEncoding,
@@ -10,8 +11,13 @@ export type {
   FindingPosition,
   FindingSeverity,
   FindingSummary,
+  HoldingsInspection,
   InspectionLimits,
   LimitRejection,
+  StockCodeMatch,
+  StockMaster,
+  StockMasterEntry,
+  StockMasterSector,
   StructureInspection,
   StructureResult,
 } from "./inspection/types";
