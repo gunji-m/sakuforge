@@ -4,7 +4,6 @@ import {
   createFinding,
   DEFAULT_INSPECTION_LIMITS,
   FINDING_MESSAGES,
-  HOLDINGS_HEADER,
   HOLDINGS_PROFILE,
   type HoldingsInspection,
   type InspectionLimits,
@@ -13,7 +12,8 @@ import {
   type StockMasterEntry,
 } from "../index";
 
-const header = HOLDINGS_HEADER.join(",");
+const header =
+  "銘柄,銘柄,銘柄,預り区分,保有株数,取得単価,現在値,現在値,評価損益,評価損益(%),買付金額,評価額,前日終値,前日比,前日比(%),評価額前日比,予想PER(倍),実績PBR(倍),予想配当利回り(%),予想EPS,実績BPS,予想1株配当";
 const entry: StockMasterEntry = Object.freeze({ sector17: null, sector33: null });
 const master: StockMaster = new Map([["9A9A", entry]]);
 
@@ -41,6 +41,7 @@ function inspected(
   const result = inspectHoldingsCsv(input, stockMaster, limits);
   if (result.kind !== "inspection") throw new Error("Expected inspection result");
   expect(result).not.toHaveProperty("records");
+  expect(result).not.toHaveProperty("columns");
   expect(result.errorCount + result.warningCount).toBe(result.totalCount);
   expect(result.returnedCount).toBe(result.findings.length);
   expect(result.truncated).toBe(result.totalCount > result.returnedCount);
@@ -74,6 +75,107 @@ test("valid holdings allow different custodies, ranges, unused missing values an
   });
 });
 
+const requiredIndexes = [0, 4, 5, 6, 21];
+const reorderedIndexes = [21, 6, 4, 0, 5];
+
+test.each([
+  [
+    "additional and duplicate unused headings",
+    [...Array.from({ length: 22 }, (_, i) => i), 22, 3, 3],
+  ],
+  ["missing custody heading", Array.from({ length: 22 }, (_, i) => i).filter((i) => i !== 3)],
+  ["only the five required headings", requiredIndexes],
+  ["reordered required headings", reorderedIndexes],
+  ["reordered 22 headings", [21, ...Array.from({ length: 21 }, (_, i) => i)]],
+] as const)("%s preserves inspection results", (_name, indexes) => {
+  const headings = [...header.split(","), "synthetic-secret-header"];
+  for (const code of ["9A9A", "9C9C"]) {
+    const rows = [
+      cells({ 1: code, 23: "synthetic-secret-value" }),
+      cells({ 1: code, 4: "旧NISA", 23: "synthetic-secret-value" }),
+    ];
+    const input = [
+      record(indexes.map((i) => headings[i] ?? "")),
+      ...rows.map((row) => record(indexes.map((i) => row[i] ?? ""))),
+    ].join("\n");
+    expect(inspected(input)).toEqual(inspected(csv(...rows.map((row) => row.slice(0, 22)))));
+  }
+});
+
+test("reordered invalid values report their actual columns and stable fields", () => {
+  const headings = header.split(",");
+  const input = [
+    record(reorderedIndexes.map((i) => headings[i] ?? "")),
+    record(Array<string>(5).fill("synthetic-secret-value")),
+  ].join("\n");
+  const result = inspected(input);
+  expect(result.findings).toEqual([
+    createFinding("dividend_per_share_invalid", { row: 2, column: 1, field: "dividend_per_share" }),
+    createFinding("current_price_invalid", { row: 2, column: 2, field: "current_price" }),
+    createFinding("holding_count_invalid", { row: 2, column: 3, field: "holding_count" }),
+    createFinding("stock_code_invalid", { row: 2, column: 4, field: "stock_code" }),
+    createFinding("purchase_price_invalid", { row: 2, column: 5, field: "purchase_price" }),
+  ]);
+  expect(result.stockCodeMatch).toEqual({ status: "not_checked" });
+});
+
+test.each([false, true])(
+  "duplicate stock and current price headings use the first, invalid=%s",
+  (invalid) => {
+    const input = [
+      "銘柄,保有株数,取得単価,現在値,予想1株配当, 銘柄 , 現在値 ",
+      record(
+        invalid
+          ? ["bad", "0", "0", "--", "0", "9A9A", "0"]
+          : ["9A9A", "0", "0", "0", "0", "bad", "--"],
+      ),
+    ].join("\n");
+    const result = inspected(input);
+    expect(result.valid).toBe(!invalid);
+    expect(result.findings).toEqual(
+      invalid
+        ? [
+            createFinding("stock_code_invalid", { row: 2, column: 1, field: "stock_code" }),
+            createFinding("current_price_invalid", { row: 2, column: 4, field: "current_price" }),
+          ]
+        : [],
+    );
+  },
+);
+
+test.each([4, 6])(
+  "rows with %i cells do not match a five-column header or receive value findings",
+  (width) => {
+    const input = [
+      "銘柄,保有株数,取得単価,現在値,予想1株配当",
+      record(Array<string>(width).fill("synthetic-secret-value")),
+      "9A9A,0,0,0,0",
+    ].join("\n");
+    expect(inspected(input)).toMatchObject({
+      valid: false,
+      rowsScanned: 2,
+      totalCount: 1,
+      findings: [createFinding("csv_column_count_invalid", { row: 2 })],
+      stockCodeMatch: { status: "not_checked" },
+    });
+  },
+);
+
+test("swapped headings with unchanged cells fail value checks instead of being corrected", () => {
+  const headings = header.split(",");
+  headings[0] = "保有株数";
+  headings[4] = "銘柄";
+  expect(inspected(`${record(headings)}\n${record(cells())}`)).toMatchObject({
+    profile: HOLDINGS_PROFILE,
+    valid: false,
+    findings: [
+      createFinding("holding_count_invalid", { row: 2, column: 1, field: "holding_count" }),
+      createFinding("stock_code_invalid", { row: 2, column: 2, field: "stock_code" }),
+    ],
+    stockCodeMatch: { status: "not_checked" },
+  });
+});
+
 test.each([
   ["", "csv_empty", undefined],
   [`${header}\nsynthetic\u0000cell`, "csv_control_character", 2],
@@ -100,7 +202,6 @@ test.each([
 test.each([
   [1, "synthetic-secret-value", "stock_code_invalid", "stock_code"],
   [1, "99999", "stock_code_unsupported", "stock_code"],
-  [4, " ", "custody_type_invalid", "custody_type"],
   [5, "synthetic-secret-value", "holding_count_invalid", "holding_count"],
   [6, "synthetic-secret-value", "purchase_price_invalid", "purchase_price"],
   [7, "synthetic-secret-value", "current_price_invalid", "current_price"],
@@ -115,16 +216,17 @@ test.each([
   },
 );
 
-test("duplicate findings have only row; three occurrences flag the second and third", () => {
-  const result = inspected(csv(cells(), cells({ 4: " NISA " }), cells()));
-  expect(result.findings).toEqual([
-    createFinding("asset_key_duplicated", { row: 3 }),
-    createFinding("asset_key_duplicated", { row: 4 }),
-  ]);
-  expect(result.stockCodeMatch.status).toBe("checked");
-  expect(inspected(csv(cells(), cells())).findings).toEqual([
-    createFinding("asset_key_duplicated", { row: 3 }),
-  ]);
+test("repeated stock codes are valid with identical or different custody values", () => {
+  const result = inspected(csv(cells(), cells({ 4: " NISA " }), cells(), cells({ 4: "旧NISA" })));
+  expect(result).toMatchObject({
+    valid: true,
+    rowsScanned: 4,
+    errorCount: 0,
+    warningCount: 0,
+    totalCount: 0,
+    findings: [],
+    stockCodeMatch: { status: "checked", unknownCodes: [], unknownCount: 0 },
+  });
 });
 
 test("unknown warning has no position, is emitted once and does not invalidate holdings", () => {
@@ -143,7 +245,7 @@ test("unknown warning has no position, is emitted once and does not invalidate h
 
 test("unused columns are not validated, including allowed structural whitespace", () => {
   const unused = Object.fromEntries(
-    [2, 3, ...Array.from({ length: 14 }, (_, i) => i + 8)].map((column) => [column, "--\t\n"]),
+    [2, 3, 4, ...Array.from({ length: 14 }, (_, i) => i + 8)].map((column) => [column, "--\t\n"]),
   );
   expect(inspected(csv(cells(unused))).findings).toEqual([]);
 });
@@ -156,16 +258,14 @@ test("independent errors coexist and positions use record start physical rows", 
   ]);
 });
 
-test.each(["\t", "\n", "\r", "\u202A", "\u202E", "\u2066", "\u2069"])(
-  "custody control %j is a value error without changing structural controls",
-  (control) => {
-    expect(inspected(csv(cells({ 4: `NISA${control}` }))).findings).toEqual([
-      createFinding("custody_type_invalid", { row: 2, column: 4, field: "custody_type" }),
-    ]);
+test.each(["", " ", "架".repeat(33), "\t", "\n", "\r", "\u202A", "\u202E", "\u2066", "\u2069"])(
+  "unused custody %j is not validated",
+  (custody) => {
+    expect(inspected(csv(cells({ 4: custody }))).valid).toBe(true);
   },
 );
 
-test("invalid code rows do not create duplicate findings", () => {
+test("invalid code rows each retain their value finding", () => {
   const result = inspected(csv(cells({ 1: "invalid" }), cells({ 1: "invalid" })));
   expect(result.findings.map(({ code }) => code)).toEqual([
     "stock_code_invalid",
@@ -174,7 +274,7 @@ test("invalid code rows do not create duplicate findings", () => {
 });
 
 test.each([[cells().slice(0, 21)], [[...cells(), "--"]]])(
-  "wrong-width records do not receive value findings or enter duplicate checks",
+  "wrong-width records do not receive value findings",
   (badCells) => {
     badCells[4] = "--";
     const result = inspected(csv(badCells, cells()));
@@ -203,15 +303,13 @@ test.each([
   }
 });
 
-test("matching proceeds despite numeric, custody and duplicate errors", () => {
+test("matching proceeds despite numeric errors and repeated codes", () => {
   const result = inspected(
     csv(cells({ 1: "9C9C", 5: "--" }), cells({ 1: "9C9C" }), cells({ 4: "" })),
   );
   expect(result.findings.map(({ code }) => code)).toEqual([
     "stock_code_unknown",
     "holding_count_invalid",
-    "asset_key_duplicated",
-    "custody_type_invalid",
   ]);
   expect(result.stockCodeMatch).toEqual({
     status: "checked",
@@ -433,8 +531,8 @@ test("10,000 records are fully counted with a zero findings return limit", () =>
   expect(inspected(input, master, { maxReturnedFindings: 0 })).toMatchObject({
     rowsScanned: 10000,
     valid: false,
-    errorCount: 19999,
-    totalCount: 19999,
+    errorCount: 10000,
+    totalCount: 10000,
     returnedCount: 0,
     truncated: true,
   });

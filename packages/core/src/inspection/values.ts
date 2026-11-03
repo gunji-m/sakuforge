@@ -1,5 +1,5 @@
 import { createFinding } from "./findings";
-import { type CsvRecord, type Finding, HOLDINGS_HEADER } from "./types";
+import type { CsvRecord, Finding, HoldingsColumnIndexes } from "./types";
 
 export function trimAsciiSpaces(text: string): string {
   let start = 0;
@@ -20,16 +20,6 @@ export function checkStockCode(
   return code.length === 5 && /^[0-9]{5}$/.test(code)
     ? "stock_code_unsupported"
     : "stock_code_invalid";
-}
-
-/** A normalized identifier component, or null. Stop counting at the first excess code point. */
-export function checkCustodyType(text: string): string | null {
-  const custody = trimAsciiSpaces(text);
-  let length = 0;
-  for (const char of custody) {
-    if (++length > 32 || /[\p{Cc}\u202A-\u202E\u2066-\u2069]/u.test(char)) return null;
-  }
-  return length === 0 ? null : custody;
 }
 
 interface DecimalParts {
@@ -70,46 +60,37 @@ export function isDividendPerShare(text: string): boolean {
   return lower.fraction.padEnd(4, "0") <= upper.fraction.padEnd(4, "0");
 }
 
-/** Only complete records reach value and identifier checks. No raw values leave this result. */
-export function checkHoldingsValues(records: readonly CsvRecord[]): readonly Finding[] {
+/** Only complete records reach value checks. No raw values leave this result. */
+export function checkHoldingsValues(
+  records: readonly CsvRecord[],
+  columns: HoldingsColumnIndexes,
+): readonly Finding[] {
   const findings: Finding[] = [];
-  const identifiers = new Map<string, Set<string>>();
   for (const { row, cells } of records) {
-    if (cells.length !== HOLDINGS_HEADER.length) continue;
-    const code = cells[0] ?? "";
-    const codeFinding = checkStockCode(code);
-    const custody = checkCustodyType(cells[3] ?? "");
+    const codeFinding = checkStockCode(cells[columns.stock_code] ?? "");
     if (codeFinding !== null) {
-      findings.push(createFinding(codeFinding, { row, column: 1, field: "stock_code" }));
-    }
-    if (custody === null) {
       findings.push(
-        createFinding("custody_type_invalid", { row, column: 4, field: "custody_type" }),
+        createFinding(codeFinding, { row, column: columns.stock_code + 1, field: "stock_code" }),
       );
     }
-    for (const [column, field, findingCode] of [
-      [5, "holding_count", "holding_count_invalid"],
-      [6, "purchase_price", "purchase_price_invalid"],
-      [7, "current_price", "current_price_invalid"],
+    for (const [field, findingCode] of [
+      ["holding_count", "holding_count_invalid"],
+      ["purchase_price", "purchase_price_invalid"],
+      ["current_price", "current_price_invalid"],
     ] as const) {
+      const column = columns[field] + 1;
       if (!isHoldingNumber(cells[column - 1] ?? "")) {
         findings.push(createFinding(findingCode, { row, column, field }));
       }
     }
-    if (!isDividendPerShare(cells[21] ?? "")) {
+    if (!isDividendPerShare(cells[columns.dividend_per_share] ?? "")) {
       findings.push(
         createFinding("dividend_per_share_invalid", {
           row,
-          column: 22,
+          column: columns.dividend_per_share + 1,
           field: "dividend_per_share",
         }),
       );
-    }
-    if (codeFinding === null && custody !== null) {
-      const custodies = identifiers.get(code) ?? new Set<string>();
-      if (custodies.has(custody)) findings.push(createFinding("asset_key_duplicated", { row }));
-      else custodies.add(custody);
-      identifiers.set(code, custodies);
     }
   }
   return findings;

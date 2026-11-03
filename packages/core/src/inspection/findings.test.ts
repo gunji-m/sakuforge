@@ -7,7 +7,7 @@ import {
   summarizeFindings,
 } from "../index";
 
-test("all 16 fixed messages and their order match domain-rules section 6", () => {
+test("all 14 fixed messages and their order match domain-rules section 6", () => {
   const expected = [
     ["csv_empty", "CSVファイルが空です。保有資産のCSVを選んでください。"],
     ["csv_control_character", "CSVに使用できない文字が含まれています。"],
@@ -21,7 +21,6 @@ test("all 16 fixed messages and their order match domain-rules section 6", () =>
     ["csv_column_count_invalid", "列の数が見出しと合わない行があります。"],
     ["stock_code_invalid", "証券コードを読み取れません。4文字の証券コードが必要です。"],
     ["stock_code_unsupported", "5桁の証券コードには、まだ対応していません。"],
-    ["custody_type_invalid", "預り区分を読み取れません。1〜32文字が必要です。"],
     ["holding_count_invalid", "保有株数を読み取れません。0以上の数値が必要です。"],
     ["purchase_price_invalid", "取得単価を読み取れません。0以上の数値が必要です。"],
     ["current_price_invalid", "現在値を読み取れません。0以上の数値が必要です。"],
@@ -29,14 +28,13 @@ test("all 16 fixed messages and their order match domain-rules section 6", () =>
       "dividend_per_share_invalid",
       "予想1株配当を読み取れません。数値か範囲（例: 40 ~ 50）が必要です。",
     ],
-    ["asset_key_duplicated", "同じ証券コードと預り区分の行が重複しています。"],
     [
       "stock_code_unknown",
       "銘柄マスターに無い証券コードがあります。該当銘柄は「未分類」として集計しました。",
     ],
   ];
   expect(FINDING_CODES.map((code) => [code, FINDING_MESSAGES[code]])).toEqual(expected);
-  expect(Object.keys(FINDING_MESSAGES)).toHaveLength(16);
+  expect(Object.keys(FINDING_MESSAGES)).toHaveLength(14);
   for (const code of FINDING_CODES) {
     expect(createFinding(code)).toEqual({
       code,
@@ -48,10 +46,9 @@ test("all 16 fixed messages and their order match domain-rules section 6", () =>
   }
 });
 
-test("the six fields and optional position properties are preserved without extra properties", () => {
+test("the five fields and optional position properties are preserved without extra properties", () => {
   expect(FINDING_FIELDS).toEqual([
     "stock_code",
-    "custody_type",
     "holding_count",
     "purchase_price",
     "current_price",
@@ -74,17 +71,16 @@ test("sorting uses absent positions first, row, column, then table code order; d
     createFinding("csv_column_count_invalid", { row: 2 }),
     createFinding("stock_code_invalid", { row: 2, column: 1, field: "stock_code" }),
     createFinding("stock_code_unsupported", { row: 2, column: 1, field: "stock_code" }),
-    createFinding("custody_type_invalid", { row: 2, column: 4, field: "custody_type" }),
     createFinding("csv_column_count_invalid", { row: 4 }),
   ];
   const input = Object.freeze([...expected].reverse().concat(expected));
   const before = [...input];
   expect(summarizeFindings(input)).toEqual({
     findings: expected,
-    errorCount: 6,
+    errorCount: 5,
     warningCount: 1,
-    totalCount: 7,
-    returnedCount: 7,
+    totalCount: 6,
+    returnedCount: 6,
     truncated: false,
   });
   expect(input).toEqual(before);

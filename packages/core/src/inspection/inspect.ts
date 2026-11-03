@@ -31,16 +31,24 @@ export function inspectHoldingsCsv(
   });
   if (structure.kind === "rejected") return structure;
   const findings = [...structure.findings];
-  if (structure.profile !== null) {
-    for (const finding of checkHoldingsValues(structure.records)) findings.push(finding);
+  const columns = structure.columns;
+  if (columns !== null) {
+    const invalidRows = new Set(
+      structure.findings
+        .filter(({ code }) => code === "csv_column_count_invalid")
+        .map(({ row }) => row),
+    );
+    const records = structure.records.filter(({ row }) => !invalidRows.has(row));
+    for (const finding of checkHoldingsValues(records, columns)) findings.push(finding);
   }
 
   let stockCodeMatch: StockCodeMatch = { status: "not_checked" };
   if (
+    columns !== null &&
     structure.totalCount === 0 &&
     !findings.some(({ code }) => code === "stock_code_invalid" || code === "stock_code_unsupported")
   ) {
-    const codes = new Set(structure.records.map(({ cells }) => cells[0] ?? ""));
+    const codes = new Set(structure.records.map(({ cells }) => cells[columns.stock_code] ?? ""));
     let unknownCodes: string[];
     try {
       unknownCodes = [...codes].filter((code) => !stockMaster.has(code)).sort();
