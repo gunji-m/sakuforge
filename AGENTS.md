@@ -23,7 +23,7 @@
 - Start Issue work from an up-to-date, clean `main` on a short-lived `<type>/<issue-number>-<short-description>` branch, using `feat`, `fix`, `docs`, `test`, or `chore` as the type.
 - Validate locally, open a PR to `main`, bring the branch up to date with `main`, confirm checks and self-review, then merge with a merge commit (no squash or rebase merge). Do not rewrite a branch after its PR is opened (no rebase, amend, or force push). Confirm the resulting `main` before cleanup.
 - Delete merged short-lived branches locally and remotely after verifying the PR and `main`. Do not introduce `develop`, long-lived `release/*`, or GitFlow without an explicit new decision.
-- Respect the user's requested boundary for commit, push, PR, merge, and branch deletion; do not infer approval for a later external step.
+- Respect the user's requested boundary for commit, push, PR, merge, and branch deletion; do not infer approval for a later external step. When no boundary is given, the β layer may merge a PR and clean up its branch only under the merge rule in Development layers.
 
 ## Issue workflow
 
