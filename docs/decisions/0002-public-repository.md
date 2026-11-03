@@ -17,7 +17,7 @@ GitHub Actions の月間枠にも制限がありました。後継の sakuforge 
 
 ## 決定
 
-gunji-m/sakuforge を **Public** にします。
+sakuforge を **Public** にします。
 
 ### 理由
 
