@@ -6,7 +6,7 @@
 
 - 状態: 準備中。言語は TypeScript（[ADR 0003](docs/decisions/0003-language-typescript.md)）。配置は Vercel と Next.js で、CSV の検査と集計はサーバー関数で行い結果を JSON で返す（[ADR 0004](docs/decisions/0004-vercel-nextjs-server-side.md)）。最初の招待で提供する範囲は [ADR 0005](docs/decisions/0005-first-invitation-scope.md)
 - 出自: 出自は tfdata-api の main `4a25bc93e8dba5b8bce866d6707bce6415ec61da`。判断の履歴はそちら。
-- 進行 Issue: [#1 sakuforge 立ち上げの進行と再開入口](../../issues/1)
+- 進行 Issue: #1 sakuforge 立ち上げの進行と再開入口
 
 ## 文書
 
