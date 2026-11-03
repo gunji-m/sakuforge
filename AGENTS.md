@@ -27,11 +27,11 @@
 
 ## Issue workflow
 
-The canonical rules are `templates/github/issue-operations.md` in gunji-m/agent-workflows (synced 2026-10-31). This section holds only the key points and repository-specific notes. The templates under `.github/` are copies; change the canonical file first.
+The canonical rules are `templates/github/issue-operations.md` in gunji-m/agent-workflows (synced 2026-11-03). This section holds only the key points and repository-specific notes. The templates under `.github/` are copies; change the canonical file first.
 
 - Issues are the entry point for work. Use the four templates in `.github/ISSUE_TEMPLATE/`: 進行 (progress), 開発 (development), 検証 (validation), and タスク (task).
 - Give each Issue exactly one type label: `進行管理`, `開発`, `検証`, or `タスク`. Give each open work Issue at most one status label: `次の作業`, `作業中`, `データ待ち`, `ユーザー確認待ち`, or `保留`. Do not put status labels on progress Issues. Mark unadopted hypotheses with `検討候補`.
-- Do not put type markers such as `[計画]` in titles. When changing a status label, update the Issue body's current state and resume notes at the same time.
+- Do not put type markers such as `[計画]` in titles. When changing a status label, update the Issue body's current state at the same time.
 - When splitting work, use progress → development/validation → task. Do not split small changes. Do not close a parent because one child is done.
 - On completion, close the Issue, remove its status label, and keep its type label.
 
@@ -48,7 +48,7 @@ The canonical structure is `templates/development-layers.md` in gunji-m/agent-wo
 - The α layer (planning) files Issues. The β layer (orchestration) picks them up, instructs the implementation layer, verifies the results, and opens PRs. Report in PRs, Issue comments, and the current state of the progress Issue.
 - The β layer picks up only development or validation Issues labeled `次の作業`, and switches the label to `作業中` when it starts.
 - Send routine work to the implementation layer's lighter setting, and implementation that involves design decisions to the stronger setting.
-- If one Issue needs more than three retries by the implementation layer, add `ユーザー確認待ち` and stop. When a design decision is needed, also add `ユーザー確認待ち` to return the Issue to the α layer. Write the reason and the resume condition in the Issue's resume notes.
+- If one Issue needs more than three retries by the implementation layer, add `ユーザー確認待ち` and stop. When a design decision is needed, also add `ユーザー確認待ち` to return the Issue to the α layer. Write the reason and the resume condition in the Issue's current state.
 - Apply the same rules to direct requests from the developer.
 
 Repository-specific notes:
