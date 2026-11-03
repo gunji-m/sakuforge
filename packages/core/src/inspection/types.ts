@@ -71,7 +71,7 @@ export interface InspectionLimits {
   readonly maxReturnedFindings: number;
 }
 export const DEFAULT_INSPECTION_LIMITS: InspectionLimits = Object.freeze({
-  maxBytes: 10 * 1024 * 1024,
+  maxBytes: 4 * 1024 * 1024,
   maxDataRows: 10000,
   maxColumns: 100,
   maxReturnedFindings: 200,
