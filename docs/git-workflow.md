@@ -1,7 +1,7 @@
 # Git workflow
 
 この文書は、sakuforge の branch、Pull Request（PR）、merge の正本です。内容が異なる場合はこの文書を
-優先します。出自は gunji-m/tfdata-api の同名文書（main `4a25bc93e8dba5b8bce866d6707bce6415ec61da`）で、
+優先します。出自は tfdata-api の同名文書（main `4a25bc93e8dba5b8bce866d6707bce6415ec61da`）で、
 配備と VPS の部分を除いて書き直しています。
 
 ## 基本方針

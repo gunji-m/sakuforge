@@ -3,7 +3,7 @@
 ## 脆弱性の連絡
 
 脆弱性を見つけた場合は、公開の Issue や PR ではなく、GitHub の
-[Private vulnerability reporting](https://github.com/gunji-m/sakuforge/security/advisories/new)
+Private vulnerability reporting
 （このリポジトリの Security タブの「Report a vulnerability」）から連絡してください。
 
 ## Issue と PR に貼らないもの

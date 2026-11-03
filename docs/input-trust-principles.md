@@ -1,6 +1,6 @@
 # 入力を信用しない原則
 
-この文書は、sakuforge が受け取る入力と、出力・記録の扱いの原則です。出自は gunji-m/tfdata-api の
+この文書は、sakuforge が受け取る入力と、出力・記録の扱いの原則です。出自は tfdata-api の
 `docs/security.md`（main `4a25bc93e8dba5b8bce866d6707bce6415ec61da`）で、サーバー固有の節（認証、
 reverse proxy、ホスト、接続経路、秘密情報の注入、DB）を除いた原則だけを引き継いでいます。具体の実装と
 検証方法は、言語が決まった後に書きます。

@@ -6,7 +6,7 @@
 - `docs/` and the ADRs under `docs/decisions/` are the source of truth. Read `README.md` and the relevant files under `docs/` before making changes.
 - The declaration and its axes are in `docs/decisions/0001-declaration-and-origin.md`. Judge every change against them; when in doubt, choose the option less likely to cause problems.
 - This repository is public (`docs/decisions/0002-public-repository.md`). Never commit or post secrets, invitation passphrases, real data, stock master JSON, the content of individual replies from the Tokyo Stock Exchange, or personally identifying information.
-- The origin is gunji-m/tfdata-api at `4a25bc93e8dba5b8bce866d6707bce6415ec61da`. Its Python code is a reference for comparing results only; do not copy it.
+- The origin is tfdata-api at `4a25bc93e8dba5b8bce866d6707bce6415ec61da`. Its Python code is a reference for comparing results only; do not copy it.
 
 ## Architecture
 
@@ -27,7 +27,7 @@
 
 ## Issue workflow
 
-The canonical rules are `templates/github/issue-operations.md` in gunji-m/agent-workflows (synced 2026-11-03). This section holds only the key points and repository-specific notes. The templates under `.github/` are copies; change the canonical file first.
+The canonical rules are `templates/github/issue-operations.md` in agent-workflows (synced 2026-11-03). This section holds only the key points and repository-specific notes. The templates under `.github/` are copies; change the canonical file first.
 
 - Issues are the entry point for work. Use the four templates in `.github/ISSUE_TEMPLATE/`: 進行 (progress), 開発 (development), 検証 (validation), and タスク (task).
 - Give each Issue exactly one type label: `進行管理`, `開発`, `検証`, or `タスク`. Give each open work Issue at most one status label: `次の作業`, `作業中`, `データ待ち`, `ユーザー確認待ち`, or `保留`. Do not put status labels on progress Issues. Mark unadopted hypotheses with `検討候補`.
@@ -43,7 +43,7 @@ Repository-specific notes:
 
 ## Development layers
 
-The canonical structure is `templates/development-layers.md` in gunji-m/agent-workflows (synced 2026-11-03). This section holds only the key points and repository-specific notes.
+The canonical structure is `templates/development-layers.md` in agent-workflows (synced 2026-11-03). This section holds only the key points and repository-specific notes.
 
 - The α layer (planning) files Issues. The β layer (orchestration) picks them up, instructs the implementation layer, verifies the results, and opens PRs. Report in PRs, Issue comments, and the current state of the progress Issue.
 - The β layer picks up only development or validation Issues labeled `次の作業`, and switches the label to `作業中` when it starts.

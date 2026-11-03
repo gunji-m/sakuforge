@@ -1,4 +1,4 @@
-<!-- 正本：gunji-m/agent-workflows の templates/github/pull_request_template.md（同期日：2026-10-31） -->
+<!-- 正本：agent-workflows の templates/github/pull_request_template.md（同期日：2026-10-31） -->
 
 ## 目的と変更内容
 
