@@ -4,9 +4,12 @@ import { createFinding, summarizeFindings } from "./findings";
 import {
   type CsvEncoding,
   DEFAULT_INSPECTION_LIMITS,
+  FINDING_FIELDS,
   type Finding,
-  HOLDINGS_HEADER,
+  type FindingField,
+  HOLDINGS_COLUMNS,
   HOLDINGS_PROFILE,
+  type HoldingsColumnIndexes,
   type InspectionLimits,
   type StructureInspection,
   type StructureResult,
@@ -34,10 +37,12 @@ export function checkCsvStructure(
     rowsScanned = 0,
     profile: typeof HOLDINGS_PROFILE | null = null,
     records: StructureInspection["records"] = [],
+    columns: HoldingsColumnIndexes | null = null,
   ): StructureInspection => ({
     kind: "structure",
     encoding,
     profile,
+    columns,
     records,
     rowsScanned,
     ...summarizeFindings(findings, limits.maxReturnedFindings),
@@ -63,18 +68,40 @@ export function checkCsvStructure(
   const [header, ...records] = parsed.records;
   const rowsScanned = records.length;
   if (header === undefined) return result(encoding, [createFinding("csv_empty")]);
+  const columns = {
+    stock_code: -1,
+    holding_count: -1,
+    purchase_price: -1,
+    current_price: -1,
+    dividend_per_share: -1,
+  };
+  const fieldsByHeader = new Map<string, FindingField>(
+    FINDING_FIELDS.map((field) => [HOLDINGS_COLUMNS[field], field]),
+  );
   // Scan cell edges once to remove only ASCII spaces (U+0020), without normalization.
-  if (
-    header.cells.length !== HOLDINGS_HEADER.length ||
-    !HOLDINGS_HEADER.every((expected, i) => trimAsciiSpaces(header.cells[i] ?? "") === expected)
-  ) {
+  for (const [index, cell] of header.cells.entries()) {
+    const field = fieldsByHeader.get(trimAsciiSpaces(cell));
+    if (field === undefined) continue;
+    if (columns[field] === -1) columns[field] = index;
+    else if (field !== "stock_code" && field !== "current_price") {
+      return result(encoding, [createFinding("csv_header_unsupported")], rowsScanned);
+    }
+  }
+  if (FINDING_FIELDS.some((field) => columns[field] === -1)) {
     return result(encoding, [createFinding("csv_header_unsupported")], rowsScanned);
   }
   if (records.length === 0) {
-    return result(encoding, [createFinding("csv_data_rows_empty")], 0, HOLDINGS_PROFILE);
+    return result(
+      encoding,
+      [createFinding("csv_data_rows_empty")],
+      0,
+      HOLDINGS_PROFILE,
+      [],
+      columns,
+    );
   }
   const findings = records
-    .filter((record) => record.cells.length !== HOLDINGS_HEADER.length)
+    .filter((record) => record.cells.length !== header.cells.length)
     .map((record) => createFinding("csv_column_count_invalid", { row: record.row }));
-  return result(encoding, findings, rowsScanned, HOLDINGS_PROFILE, records);
+  return result(encoding, findings, rowsScanned, HOLDINGS_PROFILE, records, columns);
 }

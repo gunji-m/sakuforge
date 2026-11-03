@@ -11,6 +11,7 @@ export type {
   FindingPosition,
   FindingSeverity,
   FindingSummary,
+  HoldingsColumnIndexes,
   HoldingsInspection,
   InspectionLimits,
   LimitRejection,
@@ -26,6 +27,6 @@ export {
   FINDING_CODES,
   FINDING_FIELDS,
   FINDING_MESSAGES,
-  HOLDINGS_HEADER,
+  HOLDINGS_COLUMNS,
   HOLDINGS_PROFILE,
 } from "./inspection/types";

@@ -3,8 +3,9 @@ import {
   checkCsvStructure,
   createFinding,
   DEFAULT_INSPECTION_LIMITS,
+  FINDING_FIELDS,
   type FindingCode,
-  HOLDINGS_HEADER,
+  HOLDINGS_COLUMNS,
   HOLDINGS_PROFILE,
   type InspectionLimits,
   type StructureInspection,
@@ -33,13 +34,21 @@ function checked(
 ): StructureInspection {
   const result = checkCsvStructure(input, limits);
   if (result.kind !== "structure") throw new Error("Expected structure result");
+  expect(result.columns === null).toBe(result.profile === null);
   return result;
 }
 
-test("profile and all 22 ordered header cells match section 2", () => {
+test("profile and required column headings match section 2", () => {
   expect(HOLDINGS_PROFILE).toBe("domestic_cash_holdings_v1");
-  expect(HOLDINGS_HEADER).toEqual(header.split(","));
-  expect(HOLDINGS_HEADER).toHaveLength(22);
+  expect(HOLDINGS_COLUMNS).toEqual({
+    stock_code: "銘柄",
+    holding_count: "保有株数",
+    purchase_price: "取得単価",
+    current_price: "現在値",
+    dividend_per_share: "予想1株配当",
+  });
+  expect(Object.keys(HOLDINGS_COLUMNS)).toEqual(FINDING_FIELDS);
+  expect(Object.isFrozen(HOLDINGS_COLUMNS)).toBe(true);
   expect(DEFAULT_INSPECTION_LIMITS).toEqual({
     maxBytes: 10 * 1024 * 1024,
     maxDataRows: 10000,
@@ -161,7 +170,10 @@ test.each(["", "\r\n\r\n\n\r"])("empty content and truly empty lines have no loc
 });
 
 test("header trimming removes only ASCII spaces at cell edges, preserving raw data cells", () => {
-  const padded = HOLDINGS_HEADER.map((cell) => `  ${cell}  `).join(",");
+  const padded = header
+    .split(",")
+    .map((cell) => `  ${cell}  `)
+    .join(",");
   expect(checked(`${padded}\n${data}`)).toMatchObject({
     findings: [],
     records: [{ row: 2, cells: syntheticCells }],
@@ -169,31 +181,70 @@ test("header trimming removes only ASCII spaces at cell edges, preserving raw da
 });
 
 test.each(["\t", "\u3000", "\u00A0"])("header padding with %j is not removed", (padding) => {
-  const padded = HOLDINGS_HEADER.map((cell) => `${padding}${cell}${padding}`).join(",");
+  const padded = header
+    .split(",")
+    .map((cell) => `${padding}${cell}${padding}`)
+    .join(",");
   expect(checked(`${padded}\n${data}`).findings).toEqual([createFinding("csv_header_unsupported")]);
 });
 
 test("header with a long internal ASCII space run is unsupported", () => {
-  const cells = [...HOLDINGS_HEADER];
-  const unsupportedHeader = [`銘柄${" ".repeat(100000)}x`, ...cells.slice(1)].join(",");
+  const unsupportedHeader = header.replace("保有株数", `保有株数${" ".repeat(100000)}x`);
   expect(checked(`${unsupportedHeader}\n${data}`).findings).toEqual([
     createFinding("csv_header_unsupported"),
   ]);
 });
 
 test.each([
-  header.replace("銘柄", "別名"),
-  header.replace("予想PER", "予想per"),
+  header.replaceAll("銘柄", "別名"),
+  header.replace("予想1株配当", "予想1株配當"),
   header.replace("予想1株配当", "予想１株配当"),
-  header.replace("銘柄", "銘 柄"),
-  header.replace("預り区分,保有株数", "保有株数,預り区分"),
-  `${header},extra`,
-  header.split(",").slice(1).join(","),
+  header.replaceAll("銘柄", "銘 柄"),
   `explanation\n${header}`,
   ` \n${header}`,
   `,,,\n${header}`,
-])("header changes and preceding nonempty explanations are not corrected", (input) => {
-  expect(checked(`${input}\n${data}`).findings).toEqual([createFinding("csv_header_unsupported")]);
+])("unsupported headings and preceding nonempty explanations are not corrected", (input) => {
+  expect(checked(`${input}\n${data}`)).toMatchObject({
+    profile: null,
+    columns: null,
+    records: [],
+    findings: [createFinding("csv_header_unsupported")],
+  });
+});
+
+test.each(Object.values(HOLDINGS_COLUMNS))(
+  "missing required heading %s is unsupported",
+  (heading) => {
+    const remaining = header.split(",").filter((cell) => cell !== heading);
+    expect(checked(`${remaining.join(",")}\n${data}`)).toMatchObject({
+      profile: null,
+      columns: null,
+      findings: [createFinding("csv_header_unsupported")],
+    });
+  },
+);
+
+test.each(["保有株数", "取得単価", "予想1株配当"])(
+  "duplicate required heading %s is unsupported after ASCII trimming",
+  (heading) => {
+    expect(checked(`${header}, ${heading} \n${data},0`)).toMatchObject({
+      profile: null,
+      columns: null,
+      findings: [createFinding("csv_header_unsupported")],
+    });
+  },
+);
+
+test("column indexes use first stock and current price headings, including header-only input", () => {
+  for (const input of [header, `${header}\n${data}`]) {
+    expect(checked(input).columns).toEqual({
+      stock_code: 0,
+      holding_count: 4,
+      purchase_price: 5,
+      current_price: 6,
+      dividend_per_share: 21,
+    });
+  }
 });
 
 test.each(['"unclosed', 'before"after', '"closed"after', '"closed" ', '"closed"\t'])(

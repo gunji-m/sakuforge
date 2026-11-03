@@ -8,12 +8,10 @@ export const FINDING_CODES = Object.freeze([
   "csv_column_count_invalid",
   "stock_code_invalid",
   "stock_code_unsupported",
-  "custody_type_invalid",
   "holding_count_invalid",
   "purchase_price_invalid",
   "current_price_invalid",
   "dividend_per_share_invalid",
-  "asset_key_duplicated",
   "stock_code_unknown",
 ] as const);
 
@@ -29,19 +27,16 @@ export const FINDING_MESSAGES = Object.freeze({
   csv_column_count_invalid: "列の数が見出しと合わない行があります。",
   stock_code_invalid: "証券コードを読み取れません。4文字の証券コードが必要です。",
   stock_code_unsupported: "5桁の証券コードには、まだ対応していません。",
-  custody_type_invalid: "預り区分を読み取れません。1〜32文字が必要です。",
   holding_count_invalid: "保有株数を読み取れません。0以上の数値が必要です。",
   purchase_price_invalid: "取得単価を読み取れません。0以上の数値が必要です。",
   current_price_invalid: "現在値を読み取れません。0以上の数値が必要です。",
   dividend_per_share_invalid: "予想1株配当を読み取れません。数値か範囲（例: 40 ~ 50）が必要です。",
-  asset_key_duplicated: "同じ証券コードと預り区分の行が重複しています。",
   stock_code_unknown:
     "銘柄マスターに無い証券コードがあります。該当銘柄は「未分類」として集計しました。",
 } satisfies Record<FindingCode, string>);
 
 export const FINDING_FIELDS = Object.freeze([
   "stock_code",
-  "custody_type",
   "holding_count",
   "purchase_price",
   "current_price",
@@ -82,30 +77,14 @@ export const DEFAULT_INSPECTION_LIMITS: InspectionLimits = Object.freeze({
   maxReturnedFindings: 200,
 });
 export const HOLDINGS_PROFILE = "domestic_cash_holdings_v1";
-export const HOLDINGS_HEADER = Object.freeze([
-  "銘柄",
-  "銘柄",
-  "銘柄",
-  "預り区分",
-  "保有株数",
-  "取得単価",
-  "現在値",
-  "現在値",
-  "評価損益",
-  "評価損益(%)",
-  "買付金額",
-  "評価額",
-  "前日終値",
-  "前日比",
-  "前日比(%)",
-  "評価額前日比",
-  "予想PER(倍)",
-  "実績PBR(倍)",
-  "予想配当利回り(%)",
-  "予想EPS",
-  "実績BPS",
-  "予想1株配当",
-] as const);
+export const HOLDINGS_COLUMNS = Object.freeze({
+  stock_code: "銘柄",
+  holding_count: "保有株数",
+  purchase_price: "取得単価",
+  current_price: "現在値",
+  dividend_per_share: "予想1株配当",
+} as const);
+export type HoldingsColumnIndexes = Readonly<Record<FindingField, number>>;
 export type CsvEncoding = "utf-8" | "cp932" | null;
 export interface CsvRecord {
   readonly row: number;
@@ -121,11 +100,12 @@ export interface LimitRejection {
     | "invalid_limits"
     | "invalid_stock_master";
 }
-/** Internal intermediate data. Never send records to the browser or logs. No value validation yet. */
+/** Internal intermediate data. Never send records or columns to the browser or logs. No value validation yet. */
 export interface StructureInspection extends FindingSummary {
   readonly kind: "structure";
   readonly encoding: CsvEncoding;
   readonly profile: typeof HOLDINGS_PROFILE | null;
+  readonly columns: HoldingsColumnIndexes | null;
   readonly records: readonly CsvRecord[];
   /** Completed, nonempty data records; zero before CSV parsing. */
   readonly rowsScanned: number;

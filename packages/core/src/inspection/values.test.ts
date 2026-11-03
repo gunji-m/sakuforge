@@ -1,12 +1,6 @@
 import { expect, test } from "vitest";
 import { createFinding } from "../index";
-import {
-  checkCustodyType,
-  checkHoldingsValues,
-  checkStockCode,
-  isDividendPerShare,
-  isHoldingNumber,
-} from "./values";
+import { checkHoldingsValues, checkStockCode, isDividendPerShare, isHoldingNumber } from "./values";
 
 test.each(["9A9A", "9C9C", "9D9D", "1A0Y"])("stock code %j is accepted verbatim", (code) => {
   expect(checkStockCode(code)).toBeNull();
@@ -40,44 +34,6 @@ test("exactly five ASCII digits are unsupported rather than truncated", () => {
   for (const code of [" 99999", "99999 ", "９９９９９", "999999"]) {
     expect(checkStockCode(code)).toBe("stock_code_invalid");
   }
-});
-
-test.each([
-  ["NISA", "NISA"],
-  [" NISA ", "NISA"],
-  ["旧NISA", "旧NISA"],
-  ["\u3000", "\u3000"],
-  ["\u00A0", "\u00A0"],
-  ...["a", "架", "😀"].map((char) => [char.repeat(32), char.repeat(32)]),
-  ...["\u2029", "\u202F", "\u2065", "\u206A"].map((char) => [char, char]),
-])("custody %j counts code points and trims only ASCII space", (text, expected) => {
-  expect(checkCustodyType(text ?? "")).toBe(expected);
-});
-
-test.each([
-  "",
-  "   ",
-  ...["a", "架", "😀"].map((char) => char.repeat(33)),
-  ...[
-    "\u0000",
-    "\t",
-    "\n",
-    "\r",
-    "\u007F",
-    "\u0085",
-    "\u009F",
-    "\u202A",
-    "\u202B",
-    "\u202C",
-    "\u202D",
-    "\u202E",
-    "\u2066",
-    "\u2067",
-    "\u2068",
-    "\u2069",
-  ].map((char) => `NISA${char}`),
-])("custody %j is invalid", (text) => {
-  expect(checkCustodyType(text)).toBeNull();
 });
 
 const validNumbers = [
@@ -196,43 +152,26 @@ function cells(code = "9A9A", custody = "NISA"): string[] {
   return [code, "架空銘柄", "--", custody, ...Array<string>(18).fill("0.0001")];
 }
 
-test("duplicate identifiers affect only later rows and use trimmed custody", () => {
-  const records = ["NISA", " NISA ", "NISA", "旧NISA"].map((custody, i) => ({
+const columns = Object.freeze({
+  stock_code: 0,
+  holding_count: 4,
+  purchase_price: 5,
+  current_price: 6,
+  dividend_per_share: 21,
+});
+
+test("repeated stock codes and unused custody values produce no findings", () => {
+  const records = ["NISA", " NISA ", "NISA", "旧NISA", "", "架".repeat(33)].map((custody, i) => ({
     row: i + 2,
     cells: cells("9A9A", custody),
   }));
-  expect(checkHoldingsValues(records)).toEqual([
-    createFinding("asset_key_duplicated", { row: 3 }),
-    createFinding("asset_key_duplicated", { row: 4 }),
-  ]);
-});
-
-test("invalid identifiers and incomplete records do not enter duplicate checks", () => {
-  const records = [
-    ...["invalid", "invalid", "99999", "99999"].map((code, i) => ({
-      row: i + 2,
-      cells: cells(code),
-    })),
-    { row: 6, cells: cells("9A9A", "") },
-    { row: 7, cells: cells("9A9A", "") },
-    { row: 8, cells: cells().slice(0, 21) },
-    { row: 9, cells: [...cells(), "--"] },
-    { row: 10, cells: cells() },
-  ];
-  expect(checkHoldingsValues(records).map(({ code }) => code)).toEqual([
-    "stock_code_invalid",
-    "stock_code_invalid",
-    "stock_code_unsupported",
-    "stock_code_unsupported",
-    "custody_type_invalid",
-    "custody_type_invalid",
-  ]);
+  expect(checkHoldingsValues(records, columns)).toEqual([]);
 });
 
 test("independent value errors all retain their positions without mutating records", () => {
   const invalid = Object.freeze(Array<string>(22).fill("synthetic-secret-value"));
   const records = Object.freeze([Object.freeze({ row: 4, cells: invalid })]);
-  expect(checkHoldingsValues(records)).toEqual([
+  expect(checkHoldingsValues(records, columns)).toEqual([
     createFinding("stock_code_invalid", { row: 4, column: 1, field: "stock_code" }),
     createFinding("holding_count_invalid", { row: 4, column: 5, field: "holding_count" }),
     createFinding("purchase_price_invalid", { row: 4, column: 6, field: "purchase_price" }),
@@ -245,9 +184,8 @@ test("independent value errors all retain their positions without mutating recor
   ]);
 });
 
-test("large generated cells are bounded before repeated comma groups and code point counting", () => {
+test("large generated cells are bounded before repeated comma groups", () => {
   const size = 10 * 1024 * 1024;
-  expect(checkCustodyType("架".repeat(size))).toBeNull();
   expect(checkStockCode(`9A9A${" ".repeat(size)}`)).toBe("stock_code_invalid");
   expect(isHoldingNumber(`1${",000".repeat(size / 4)}`)).toBe(false);
   expect(isHoldingNumber("0".repeat(size))).toBe(false);
