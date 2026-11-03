@@ -23,7 +23,7 @@
 - Start Issue work from an up-to-date, clean `main` on a short-lived `<type>/<issue-number>-<short-description>` branch, using `feat`, `fix`, `docs`, `test`, or `chore` as the type.
 - Validate locally, open a PR to `main`, bring the branch up to date with `main`, confirm checks and self-review, then merge with a merge commit (no squash or rebase merge). Do not rewrite a branch after its PR is opened (no rebase, amend, or force push). Confirm the resulting `main` before cleanup.
 - Delete merged short-lived branches locally and remotely after verifying the PR and `main`. Do not introduce `develop`, long-lived `release/*`, or GitFlow without an explicit new decision.
-- Respect the user's requested boundary for commit, push, PR, merge, and branch deletion; do not infer approval for a later external step.
+- Respect the user's requested boundary for commit, push, PR, merge, and branch deletion; do not infer approval for a later external step. When no boundary is given, the β layer may merge a PR and clean up its branch only under the merge rule in Development layers.
 
 ## Issue workflow
 
@@ -43,12 +43,13 @@ Repository-specific notes:
 
 ## Development layers
 
-The canonical structure is `templates/development-layers.md` in gunji-m/agent-workflows (synced 2026-11-02). This section holds only the key points and repository-specific notes.
+The canonical structure is `templates/development-layers.md` in gunji-m/agent-workflows (synced 2026-11-03). This section holds only the key points and repository-specific notes.
 
 - The α layer (planning) files Issues. The β layer (orchestration) picks them up, instructs the implementation layer, verifies the results, and opens PRs. Report in PRs, Issue comments, and the current state of the progress Issue.
 - The β layer picks up only development or validation Issues labeled `次の作業`, and switches the label to `作業中` when it starts.
 - Send routine work to the implementation layer's lighter setting, and implementation that involves design decisions to the stronger setting.
-- If one Issue needs more than three retries by the implementation layer, add `ユーザー確認待ち` and stop. When a design decision is needed, also add `ユーザー確認待ち` to return the Issue to the α layer. Write the reason and the resume condition in the Issue's current state.
+- If one Issue (or one PR, when the Issue is split into several PRs) needs more than three retries by the implementation layer, add `ユーザー確認待ち` and stop. When a design decision is needed, also add `ユーザー確認待ち` to return the Issue to the α layer. Write the reason and the resume condition in the Issue's current state.
+- The β layer merges a PR that touches only the areas it may proceed on without confirmation, once CI passes and there are no review findings, unresolved threads, conflicts, or decisions for the developer to confirm. For a PR that touches an area requiring human approval, wait for the developer's instruction.
 - Apply the same rules to direct requests from the developer.
 
 Repository-specific notes:

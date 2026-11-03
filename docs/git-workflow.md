@@ -169,7 +169,7 @@ Codex等のagentもこのworkflowに従います。
 - 通常変更を`main`へ直接commit／pushしない
 - 要件を満たす最小変更とし、無関係なrefactor、rename、依存更新を混ぜない
 - 必要なローカル検証、PR、self-reviewを経てMerge commitで統合する
-- commit、push、PR、merge、branch削除はユーザーが指定した作業境界に従う
+- commit、push、PR、merge、branch削除はユーザーが指定した作業境界に従う。境界の指定が無いときは、β層は`AGENTS.md`の開発体制の節の条件を満たすPRだけをmergeし、merge後の確認とcleanupまで行う
 - 完了時に変更、検証結果、skip／未実行、互換性、残存リスクを報告する
 
 詳細な開発規則は[`AGENTS.md`](../AGENTS.md)を併せて適用します。
