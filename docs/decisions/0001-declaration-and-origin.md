@@ -4,13 +4,13 @@ ADR は「何をどう決めたか、理由は何か」を1件ずつ残す短い
 
 - Status: Accepted
 - Date: 2026-10-31
-- Origin: gunji-m/tfdata-api の [ADR 0006](https://github.com/gunji-m/tfdata-api/blob/4a25bc93e8dba5b8bce866d6707bce6415ec61da/docs/decisions/0006-small-invited-service-and-review-phase.md)（宣言と5つの軸）、
-  [ADR 0007](https://github.com/gunji-m/tfdata-api/blob/4a25bc93e8dba5b8bce866d6707bce6415ec61da/docs/decisions/0007-no-user-data-at-rest-and-successor-repository.md)（利用者データを預からない形と後継リポジトリ）
+- Origin: tfdata-api の ADR 0006（宣言と5つの軸。main `4a25bc93e8dba5b8bce866d6707bce6415ec61da` の `docs/decisions/0006-small-invited-service-and-review-phase.md`）、
+  ADR 0007（利用者データを預からない形と後継リポジトリ。main `4a25bc93e8dba5b8bce866d6707bce6415ec61da` の `docs/decisions/0007-no-user-data-at-rest-and-successor-repository.md`）
 - Related: [ADR 0002](0002-public-repository.md)
 
 ## 背景
 
-sakuforge は gunji-m/tfdata-api の後継です。tfdata-api の ADR 0007 で、利用者データを預からない形へ移り、
+sakuforge は tfdata-api の後継です。tfdata-api の ADR 0007 で、利用者データを預からない形へ移り、
 コードと Git 履歴は持ち込まず、思想、ドメインの規則、作り方の規則だけを持って新しいリポジトリで作り直すと
 決めました。同じ ADR が、2つのリポジトリを後継の ADR 0001 に置く「出自」の1文でつなぐとしています。
 
@@ -20,7 +20,7 @@ sakuforge は gunji-m/tfdata-api の後継です。tfdata-api の ADR 0007 で�
 
 ### 出自
 
-> 出自は gunji-m/tfdata-api の main `4a25bc93e8dba5b8bce866d6707bce6415ec61da`。判断の履歴はそちら。
+> 出自は tfdata-api の main `4a25bc93e8dba5b8bce866d6707bce6415ec61da`。判断の履歴はそちら。
 
 ### 宣言
 

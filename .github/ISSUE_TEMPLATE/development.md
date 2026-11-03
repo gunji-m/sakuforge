@@ -3,7 +3,7 @@ name: 開発Issue
 about: 実装・文書・保守の変更と必要な確認を行う
 labels: ["開発"]
 ---
-<!-- 正本：gunji-m/agent-workflows の templates/github/ISSUE_TEMPLATE/development.md（同期日：2026-11-03） -->
+<!-- 正本：agent-workflows の templates/github/ISSUE_TEMPLATE/development.md（同期日：2026-11-03） -->
 
 <!-- タイトルは作業内容だけを書き、種類・状態はラベルで示す。本文には今の状態だけを書き、経緯はコメントに書く。 -->
 

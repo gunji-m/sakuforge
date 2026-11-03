@@ -3,7 +3,7 @@ name: 検証Issue
 about: 独立した検証や担当への引渡しが必要な場合に使う
 labels: ["検証"]
 ---
-<!-- 正本：gunji-m/agent-workflows の templates/github/ISSUE_TEMPLATE/validation.md（同期日：2026-11-03） -->
+<!-- 正本：agent-workflows の templates/github/ISSUE_TEMPLATE/validation.md（同期日：2026-11-03） -->
 
 <!-- タイトルは作業内容だけを書き、種類・状態はラベルで示す。本文には今の状態だけを書き、経緯はコメントに書く。 -->
 

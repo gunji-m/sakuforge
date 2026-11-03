@@ -1,7 +1,7 @@
 # ドメイン規則
 
 この文書は、sakuforge が扱う保有 CSV、検査所見、構成計算の規則の正本です。言語や配置に依らない
-「規則」だけを書きます。出自は gunji-m/tfdata-api の
+「規則」だけを書きます。出自は tfdata-api の
 `docs/api-design.md`、`docs/inspect-api.md`、`docs/test-data.md`、`app/schemas/inspect.py`、
 `app/services/asset.py`（main `4a25bc93e8dba5b8bce866d6707bce6415ec61da`）です。逆算して書いた規則は
 2026-11-01 に本人が確認して確定しました（#9、[ADR 0005](decisions/0005-first-invitation-scope.md)）。tfdata-api の

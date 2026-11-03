@@ -3,7 +3,7 @@ name: タスクIssue
 about: 開発・検証Issueの下で、具体的な作業と成果を追跡する
 labels: ["タスク"]
 ---
-<!-- 正本：gunji-m/agent-workflows の templates/github/ISSUE_TEMPLATE/task.md（同期日：2026-11-03） -->
+<!-- 正本：agent-workflows の templates/github/ISSUE_TEMPLATE/task.md（同期日：2026-11-03） -->
 
 <!-- タイトルは作業内容だけを書き、種類・状態はラベルで示す。本文には今の状態だけを書き、経緯はコメントに書く。 -->
 

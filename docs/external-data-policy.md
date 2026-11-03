@@ -1,6 +1,6 @@
 # 外部データとの約束
 
-この文書は、sakuforge が使う外部データ（銘柄マスター）の扱いの原則です。出自は gunji-m/tfdata-api の
+この文書は、sakuforge が使う外部データ（銘柄マスター）の扱いの原則です。出自は tfdata-api の
 `docs/jpx-master-data-policy.md` と ADR 0005（main `4a25bc93e8dba5b8bce866d6707bce6415ec61da`）で、
 原則だけを引き継いでいます。この文書はプロジェクトの保守的な利用判断であり、法的助言ではありません。
 

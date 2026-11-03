@@ -3,7 +3,7 @@ name: 進行Issue
 about: 全体目的・作業順・依存関係・受入条件を管理する
 labels: ["進行管理"]
 ---
-<!-- 正本：gunji-m/agent-workflows の templates/github/ISSUE_TEMPLATE/progress.md（同期日：2026-11-03） -->
+<!-- 正本：agent-workflows の templates/github/ISSUE_TEMPLATE/progress.md（同期日：2026-11-03） -->
 
 <!-- タイトルは実現すること・作業内容を書き、種類は「進行管理」ラベルで示す。全体の入口となる進行Issueをピン留めする。本文には今の状態だけを書き、経緯はコメントに書く。 -->
 
