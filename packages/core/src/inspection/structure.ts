@@ -11,14 +11,7 @@ import {
   type StructureInspection,
   type StructureResult,
 } from "./types";
-
-function trimAsciiSpaces(text: string): string {
-  let start = 0;
-  let end = text.length;
-  while (start < end && text.charAt(start) === " ") start++;
-  while (end > start && text.charAt(end - 1) === " ") end--;
-  return text.slice(start, end);
-}
+import { trimAsciiSpaces } from "./values";
 
 /** Structure only. Records are internal input to later value checks, never an API response. */
 export function checkCsvStructure(
