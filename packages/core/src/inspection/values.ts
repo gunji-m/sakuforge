@@ -42,22 +42,43 @@ function decimalParts(text: string, maxIntegerDigits: number): DecimalParts | nu
   return { integer, fraction: fraction.slice(0, 4) };
 }
 
+function decimalText(parts: DecimalParts): string {
+  const fraction = parts.fraction.replace(/0+$/, "");
+  return fraction === "" ? parts.integer : `${parts.integer}.${fraction}`;
+}
+
+export function parseHoldingNumber(text: string): string | null {
+  const parts = decimalParts(text, 10);
+  return parts === null ? null : decimalText(parts);
+}
+
+export function parseDividendPerShare(
+  text: string,
+): { readonly lower: string; readonly upper: string | null } | null {
+  const separator = text.indexOf("~");
+  if (separator === -1) {
+    const parts = decimalParts(text, 6);
+    return parts === null ? null : { lower: decimalText(parts), upper: null };
+  }
+  if (text.indexOf("~", separator + 1) !== -1) return null;
+  const lower = decimalParts(text.slice(0, separator), 6);
+  const upper = decimalParts(text.slice(separator + 1), 6);
+  if (lower === null || upper === null) return null;
+  const ordered =
+    lower.integer.length !== upper.integer.length
+      ? lower.integer.length < upper.integer.length
+      : lower.integer !== upper.integer
+        ? lower.integer < upper.integer
+        : lower.fraction.padEnd(4, "0") <= upper.fraction.padEnd(4, "0");
+  return ordered ? { lower: decimalText(lower), upper: decimalText(upper) } : null;
+}
+
 export function isHoldingNumber(text: string): boolean {
-  return decimalParts(text, 10) !== null;
+  return parseHoldingNumber(text) !== null;
 }
 
 export function isDividendPerShare(text: string): boolean {
-  const separator = text.indexOf("~");
-  if (separator === -1) return decimalParts(text, 6) !== null;
-  if (text.indexOf("~", separator + 1) !== -1) return false;
-  const lower = decimalParts(text.slice(0, separator), 6);
-  const upper = decimalParts(text.slice(separator + 1), 6);
-  if (lower === null || upper === null) return false;
-  if (lower.integer.length !== upper.integer.length) {
-    return lower.integer.length < upper.integer.length;
-  }
-  if (lower.integer !== upper.integer) return lower.integer < upper.integer;
-  return lower.fraction.padEnd(4, "0") <= upper.fraction.padEnd(4, "0");
+  return parseDividendPerShare(text) !== null;
 }
 
 /** Only complete records reach value checks. No raw values leave this result. */
