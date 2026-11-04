@@ -1,3 +1,11 @@
+export { aggregateHoldings } from "./aggregation/aggregate";
+export type {
+  AggregationRejection,
+  HoldingRow,
+  HoldingsAggregation,
+  SectorComposition,
+  SectorShare,
+} from "./aggregation/types";
 export { createFinding, summarizeFindings } from "./inspection/findings";
 export { inspectHoldingsCsv } from "./inspection/inspect";
 export { checkCsvStructure } from "./inspection/structure";
