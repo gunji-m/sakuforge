@@ -16,13 +16,16 @@ interface SectorTotal {
   value: Decimal;
 }
 
-function readSector(value: unknown): StockMasterSector | null | undefined {
+function readSector(
+  value: unknown,
+  axis: "sector17" | "sector33",
+): StockMasterSector | null | undefined {
   if (value === null) return null;
   if (typeof value !== "object") return undefined;
   const { code, name } = value as StockMasterSector;
   if (
     typeof code !== "string" ||
-    !/^[0-9]{1,4}$/.test(code) ||
+    !(axis === "sector17" ? /^(?:[1-9]|1[0-7])$/ : /^[0-9]{1,4}$/).test(code) ||
     code.trim() !== code ||
     typeof name !== "string"
   )
@@ -105,8 +108,8 @@ export function aggregateHoldings(
       if (stockMaster.has(stockCode)) {
         const entry = stockMaster.get(stockCode);
         if (entry === null || typeof entry !== "object") return { kind: "rejected", reason };
-        const parsed17 = readSector(entry.sector17);
-        const parsed33 = readSector(entry.sector33);
+        const parsed17 = readSector(entry.sector17, "sector17");
+        const parsed33 = readSector(entry.sector33, "sector33");
         if (parsed17 === undefined || parsed33 === undefined) return { kind: "rejected", reason };
         sector17 = parsed17;
         sector33 = parsed33;

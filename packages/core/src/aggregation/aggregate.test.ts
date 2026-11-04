@@ -418,6 +418,39 @@ test.each(axes)("%s sector data is revalidated even for a zero-valued holding", 
   }
 });
 
+test.each(["0", "18", "01"])("sector17 rejects code %s", (code) => {
+  const master = new Map([["1001", { sector17: { code, name: "合成17業種" }, sector33: null }]]);
+  expect(aggregateHoldings([row()], master)).toEqual({
+    kind: "rejected",
+    reason: "invalid_stock_master",
+  });
+});
+
+test("sector17 accepts code 17 and sector33 accepts code 18", () => {
+  const master = new Map([
+    [
+      "1001",
+      {
+        sector17: { code: "17", name: "合成17業種" },
+        sector33: { code: "18", name: "合成33業種" },
+      },
+    ],
+  ]);
+  expect(aggregateHoldings([row()], master)).toEqual({
+    kind: "aggregation",
+    totalAssetValue: "1",
+    annualDividend: { lower: "0", upper: "0" },
+    sector17: {
+      status: "computed",
+      sectors: [{ code: "17", name: "合成17業種", ratio: "100.00" }],
+    },
+    sector33: {
+      status: "computed",
+      sectors: [{ code: "18", name: "合成33業種", ratio: "100.00" }],
+    },
+  });
+});
+
 test("throwing sector getters become a fixed master rejection", () => {
   const sector = {
     get code(): string {
