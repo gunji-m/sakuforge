@@ -3,13 +3,13 @@ name: 開発Issue
 about: 実装・文書・保守の変更と必要な確認を行う
 labels: ["開発"]
 ---
-<!-- 正本：agent-workflows の templates/github/ISSUE_TEMPLATE/development.md（同期日：2026-11-03） -->
+<!-- 正本：agent-workflows の templates/github/ISSUE_TEMPLATE/development.md（同期日：2026-11-05） -->
 
 <!-- タイトルは作業内容だけを書き、種類・状態はラベルで示す。本文には今の状態だけを書き、経緯はコメントに書く。 -->
 
 ## 概要
 
-<!-- 1〜2 文で、何を・なぜ。工程番号を使うなら「対象工程：」もここに書く。 -->
+<!-- 1〜2 文で、何を・なぜ。工程番号を使うなら「対象工程：」もここに書く。1 つの成果で閉じられる大きさにする（目安は PR 1〜3 本）。方式を決める Issue は、記録した時点で閉じる。 -->
 
 ## 現在地
 

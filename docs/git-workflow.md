@@ -78,8 +78,8 @@ git push -u origin <branch-name>
 自分だけのbranchは、PR作成前であればfixup／squashでcommitを整えて構いません。PR作成後は
 rebase、amend、force pushでbranchを書き換えず、修正は追加のcommitで行います。
 
-PRのbaseは`main`とし、[PR template](../.github/pull_request_template.md)に沿って、目的と変更内容、
-確認したこと（pass／fail／skip／未実行と理由）、関連Issueを書きます。
+PRのbaseは`main`とし、[PR template](../.github/pull_request_template.md)に沿って、要約、決めてほしいこと、
+レビューのポイント、確認したこと（pass／fail／skip／未実行）、作業中に決めて進めたこと、関連Issueを書きます。
 
 self-reviewではIssue scope、意図しない差分、秘密情報、実データ、東証の個別回答の内容、個人を特定できる
 情報が無いことを確認します。CIを定義した後は、対象head SHAに紐付く全workflow runの成功を確認するまで
