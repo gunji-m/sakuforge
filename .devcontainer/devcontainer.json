@@ -1,0 +1,12 @@
+{
+  "name": "sakuforge",
+  "image": "node:24.22.1-bookworm@sha256:d862bb5d082c5ae0210ac07e8c0344cb8cf7bef6d78e9b8c50c179da923108ea",
+  "mounts": [
+    "source=sakuforge-node_modules-${devcontainerId},target=${containerWorkspaceFolder}/node_modules,type=volume"
+  ],
+  "containerEnv": {
+    "COREPACK_ENABLE_DOWNLOAD_PROMPT": "0"
+  },
+  "postCreateCommand": "corepack enable && corepack pnpm install --frozen-lockfile",
+  "forwardPorts": [3000]
+}

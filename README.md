@@ -8,6 +8,15 @@
 - 出自: 出自は tfdata-api の main `4a25bc93e8dba5b8bce866d6707bce6415ec61da`。判断の履歴はそちら。
 - 進行 Issue: #1 sakuforge 立ち上げの進行と再開入口
 
+## 開発環境（Dev Container）
+
+[.devcontainer/devcontainer.json](.devcontainer/devcontainer.json) で、手元に Node や pnpm を入れずに、`.node-version` と同じ Node と lockfile どおりの依存で動かせる。Vercel の実行環境を再現するものではない。
+
+1. VS Code の Dev Containers 拡張などで、リポジトリをコンテナで開く。作成時に `corepack pnpm install --frozen-lockfile` が走る
+2. コンテナの中で `pnpm lint`、`pnpm typecheck`、`pnpm test` を実行する
+
+`node_modules` はコンテナ専用の volume に置くので、手元の `node_modules` とは混ざらない。Next.js の開発サーバーの port 3000 は手元へ転送する。Node の版を上げるときは、`.node-version` とイメージのタグ・digest を一緒に直す。
+
 ## 文書
 
 | 文書 | 中身 |
