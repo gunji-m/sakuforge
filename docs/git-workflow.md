@@ -23,7 +23,7 @@ GitHub の branch protection／ruleset で`main`を守ります。
 - `main`への直接push禁止
 - force push禁止
 - PR必須
-- 必須checkはCIの`validate`。branchが最新の`main`を含むことはrulesetで強制しないので、[4](#4-merge-commitとmain確認)の手順で追いつかせる
+- 必須checkはCIの`validate`。merge前にbranchが最新の`main`を含むことも求める（[4](#4-merge-commitとmain確認)の手順で追いつかせる）
 
 ## Branch命名
 
