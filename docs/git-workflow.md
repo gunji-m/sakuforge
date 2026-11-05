@@ -15,8 +15,6 @@
 リポジトリを作った直後の最初のcommitだけは、PRのbaseが無いため`main`へ直接pushしました（README と
 .gitignore）。以後は例外を作りません。
 
-CI は言語確定後に定義する。
-
 ## Branch protection／ruleset
 
 このリポジトリは Public なので（[ADR 0002](decisions/0002-public-repository.md)）、運用の注意ではなく
@@ -25,7 +23,7 @@ GitHub の branch protection／ruleset で`main`を守ります。
 - `main`への直接push禁止
 - force push禁止
 - PR必須
-- 必須checkは、CIを定義した後に追加する
+- 必須checkはCIの`validate`。branchが最新の`main`を含むことはrulesetで強制しないので、[4](#4-merge-commitとmain確認)の手順で追いつかせる
 
 ## Branch命名
 
@@ -82,8 +80,7 @@ PRのbaseは`main`とし、[PR template](../.github/pull_request_template.md)に
 レビューのポイント、確認したこと（pass／fail／skip／未実行）、作業中に決めて進めたこと、関連Issueを書きます。
 
 self-reviewではIssue scope、意図しない差分、秘密情報、実データ、東証の個別回答の内容、個人を特定できる
-情報が無いことを確認します。CIを定義した後は、対象head SHAに紐付く全workflow runの成功を確認するまで
-mergeしません。
+情報が無いことを確認します。対象head SHAに紐付く全workflow runの成功を確認するまでmergeしません。
 
 ### 4. Merge commitとmain確認
 
@@ -110,19 +107,12 @@ merge commitも`main`上の新しいcommitなので、merge後の`main`を確認
 
 ### 5. Cleanup
 
-PRが`MERGED`であり、merge後の`main`を確認してからremote／local branchを削除します。
-
-```bash
-git switch main
-git fetch --prune origin
-git merge --ff-only origin/main
-git push origin --delete <branch-name>  # GitHub側で未削除の場合だけ
-git branch -d <branch-name>
-```
+remote branchは、GitHubがmerge時に削除します（repository settingsの`delete_branch_on_merge`）。local
+branchは、PRが`MERGED`であり、merge後の`main`を確認してから`git branch -d`で削除します。手順と、worktreeや
+`MERGED`以外のbranchの扱いは[Branchのlifecycleとcleanup](#branchのlifecycleとcleanup)に従います。
 
 Merge commitではbranchのcommitが`main`の祖先になるため、`git branch -d`で削除できます。拒否された
-場合は未統合のcommitが残っているので、削除せずに理由を確認します。worktreeや`MERGED`以外の
-branchの扱いは[Branchのlifecycleとcleanup](#branchのlifecycleとcleanup)に従います。
+場合は未統合のcommitが残っているので、削除せずに理由を確認します。
 
 ## Branchのlifecycleとcleanup
 
@@ -141,13 +131,16 @@ branchは作業分離のための一時的なものです。進捗の識別子�
 
 削除せずに維持する場合は、関連Issueに所有者、関連Open Issue、再開条件、次の確認時期を記録します。
 
-Cleanupは次の順で行います。worktreeが使用中のbranchは削除できないため、worktreeを先に外します。
+Cleanupは次の順で行います。`main`を最新にしてmerge後の内容を確かめ、worktreeが使用中のbranchは削除
+できないため、worktreeを先に外します。
 
 ```bash
+git switch main
+git fetch --prune origin                # remote-tracking refも整理する
+git merge --ff-only origin/main
 git worktree list
 git worktree remove <path>              # cleanで自分の作業のworktreeだけ
-git push origin --delete <branch-name>  # GitHub側で未削除の場合だけ
-git fetch --prune origin                # remote-tracking refを整理する
+git push origin --delete <branch-name>  # GitHubがmerge時に削除していない場合だけ
 git branch -d <branch-name>
 ```
 
