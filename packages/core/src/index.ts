@@ -6,6 +6,8 @@ export type {
   SectorComposition,
   SectorShare,
 } from "./aggregation/types";
+export { inspectAndAggregateHoldingsCsv } from "./holdings/inspect-and-aggregate";
+export type { HoldingsCsvResult } from "./holdings/types";
 export { createFinding, summarizeFindings } from "./inspection/findings";
 export { inspectHoldingsCsv } from "./inspection/inspect";
 export { checkCsvStructure } from "./inspection/structure";

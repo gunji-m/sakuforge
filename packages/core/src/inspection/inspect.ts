@@ -1,7 +1,9 @@
 import { createFinding, summarizeFindings } from "./findings";
 import { checkCsvStructure } from "./structure";
 import {
+  type CsvRecord,
   DEFAULT_INSPECTION_LIMITS,
+  type HoldingsColumnIndexes,
   type HoldingsInspection,
   type InspectionLimits,
   type LimitRejection,
@@ -15,6 +17,22 @@ export function inspectHoldingsCsv(
   stockMaster: StockMaster,
   overrides: Partial<InspectionLimits> = {},
 ): LimitRejection | HoldingsInspection {
+  const result = inspectHoldingsCsvWithRecords(input, stockMaster, overrides);
+  return "kind" in result ? result : result.inspection;
+}
+
+/** Internal intermediate data. Never expose records or columns in public results. */
+export function inspectHoldingsCsvWithRecords(
+  input: Uint8Array | string,
+  stockMaster: StockMaster,
+  overrides: Partial<InspectionLimits> = {},
+):
+  | LimitRejection
+  | {
+      readonly inspection: HoldingsInspection;
+      readonly records: readonly CsvRecord[];
+      readonly columns: HoldingsColumnIndexes | null;
+    } {
   if (!(stockMaster instanceof Map)) return { kind: "rejected", reason: "invalid_stock_master" };
   if (overrides === null || typeof overrides !== "object") {
     return { kind: "rejected", reason: "invalid_limits" };
@@ -32,13 +50,13 @@ export function inspectHoldingsCsv(
   if (structure.kind === "rejected") return structure;
   const findings = [...structure.findings];
   const columns = structure.columns;
+  const invalidRows = new Set(
+    structure.findings
+      .filter(({ code }) => code === "csv_column_count_invalid")
+      .map(({ row }) => row),
+  );
+  const records = structure.records.filter(({ row }) => !invalidRows.has(row));
   if (columns !== null) {
-    const invalidRows = new Set(
-      structure.findings
-        .filter(({ code }) => code === "csv_column_count_invalid")
-        .map(({ row }) => row),
-    );
-    const records = structure.records.filter(({ row }) => !invalidRows.has(row));
     for (const finding of checkHoldingsValues(records, columns)) findings.push(finding);
   }
 
@@ -61,12 +79,16 @@ export function inspectHoldingsCsv(
   }
   const summary = summarizeFindings(findings, limits.maxReturnedFindings);
   return {
-    kind: "inspection",
-    valid: summary.errorCount === 0,
-    profile: structure.profile,
-    encoding: structure.encoding,
-    rowsScanned: structure.rowsScanned,
-    ...summary,
-    stockCodeMatch,
+    inspection: {
+      kind: "inspection",
+      valid: summary.errorCount === 0,
+      profile: structure.profile,
+      encoding: structure.encoding,
+      rowsScanned: structure.rowsScanned,
+      ...summary,
+      stockCodeMatch,
+    },
+    records,
+    columns,
   };
 }
