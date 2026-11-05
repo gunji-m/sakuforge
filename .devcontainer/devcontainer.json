@@ -5,7 +5,8 @@
     "source=sakuforge-node_modules-${devcontainerId},target=${containerWorkspaceFolder}/node_modules,type=volume"
   ],
   "containerEnv": {
-    "COREPACK_ENABLE_DOWNLOAD_PROMPT": "0"
+    "COREPACK_ENABLE_DOWNLOAD_PROMPT": "0",
+    "NEXT_TELEMETRY_DISABLED": "1"
   },
   "postCreateCommand": "corepack enable && corepack pnpm install --frozen-lockfile",
   "forwardPorts": [3000]

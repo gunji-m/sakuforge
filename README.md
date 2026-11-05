@@ -15,7 +15,7 @@
 1. VS Code の Dev Containers 拡張などで、リポジトリをコンテナで開く。作成時に `corepack pnpm install --frozen-lockfile` が走る
 2. コンテナの中で `pnpm lint`、`pnpm typecheck`、`pnpm test` を実行する
 
-`node_modules` はコンテナ専用の volume に置くので、手元の `node_modules` とは混ざらない。Next.js の開発サーバーの port 3000 は手元へ転送する。Node の版を上げるときは、`.node-version` とイメージのタグ・digest を一緒に直す。
+`node_modules` はコンテナ専用の volume に置くので、手元の `node_modules` とは混ざらない。Next.js の開発サーバーの port 3000 は手元へ転送し、Next.js の匿名テレメトリーは止めてある（`NEXT_TELEMETRY_DISABLED=1`）。Node の版を上げるときは、`.node-version` とイメージのタグ・digest を一緒に直す。
 
 ## 文書
 
