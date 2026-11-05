@@ -2,7 +2,7 @@
 
 ## Scope and source of truth
 
-- No application code exists yet. The language is TypeScript (`docs/decisions/0003-language-typescript.md`). The app is placed on Vercel with Next.js, and CSV inspection and aggregation run in a server function that returns JSON (`docs/decisions/0004-vercel-nextjs-server-side.md`). The design is in `docs/design.md`.
+- Validation and aggregation are in `packages/core`. The language is TypeScript (`docs/decisions/0003-language-typescript.md`). The app is placed on Vercel with Next.js, and CSV inspection and aggregation run in a server function that returns JSON (`docs/decisions/0004-vercel-nextjs-server-side.md`). The design is in `docs/design.md`.
 - `docs/` and the ADRs under `docs/decisions/` are the source of truth. Read `README.md` and the relevant files under `docs/` before making changes.
 - The declaration and its axes are in `docs/decisions/0001-declaration-and-origin.md`. Judge every change against them; when in doubt, choose the option less likely to cause problems.
 - This repository is public (`docs/decisions/0002-public-repository.md`). Never commit or post secrets, invitation passphrases, real data, stock master JSON, the content of individual replies from the Tokyo Stock Exchange, or personally identifying information.
@@ -22,7 +22,7 @@
 - Keep `main` as the only mainline. Do not commit or push changes directly to `main`.
 - Start Issue work from an up-to-date, clean `main` on a short-lived `<type>/<issue-number>-<short-description>` branch, using `feat`, `fix`, `docs`, `test`, or `chore` as the type.
 - Validate locally, open a PR to `main`, bring the branch up to date with `main`, confirm checks and self-review, then merge with a merge commit (no squash or rebase merge). Do not rewrite a branch after its PR is opened (no rebase, amend, or force push). Confirm the resulting `main` before cleanup.
-- Delete merged short-lived branches locally and remotely after verifying the PR and `main`. Do not introduce `develop`, long-lived `release/*`, or GitFlow without an explicit new decision.
+- GitHub deletes the remote branch of a merged PR. Delete the local branch with `git branch -d` after verifying the PR and `main`. Do not introduce `develop`, long-lived `release/*`, or GitFlow without an explicit new decision.
 - Respect the user's requested boundary for commit, push, PR, merge, and branch deletion; do not infer approval for a later external step. When no boundary is given, the β layer may merge a PR and clean up its branch only under the merge rule in Development layers.
 
 ## Issue workflow
