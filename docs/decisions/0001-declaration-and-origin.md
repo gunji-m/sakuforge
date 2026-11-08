@@ -69,6 +69,9 @@ ADR 0007「3. 引き継ぐもの」の7層を、次の文書に置きます。
 | 作り方の規則（1 Issue／1 branch／1 PR、Merge commit、進行 Issue、ラベル体系、template、AGENTS.md の骨格、検証の報告） | [Git workflow](../git-workflow.md)、[AGENTS.md](../../AGENTS.md)、`.github/` |
 | 判断の残し方（ADR の書式） | `docs/decisions/` |
 
+追記（2026-11-06、#53）：2026-11-03、#33 で使う列を見出しの名前で探す形に変え、保有 CSV は固定の22列では
+なくなった。今の規則は[ドメイン規則](../domain-rules.md)の2節・9節。
+
 テストの合成 CSV fixture と期待値は、言語が決まった後に新しい言語のテストとして書き直します。tfdata-api の
 Python 実装は、後継の実装と結果を突き合わせる参照にだけ使い、持ち込みません。
 
