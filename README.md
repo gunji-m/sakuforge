@@ -27,6 +27,7 @@
 | [docs/input-trust-principles.md](docs/input-trust-principles.md) | 入力を信用しない原則 |
 | [docs/external-data-policy.md](docs/external-data-policy.md) | 外部データ（東証の銘柄一覧）との約束 |
 | [docs/git-workflow.md](docs/git-workflow.md) | branch、PR、merge の規則 |
+| [docs/layer-operations.md](docs/layer-operations.md) | α層・β層が読む Issue運用と開発体制の手続き |
 | [AGENTS.md](AGENTS.md) | agent 向けの作業規則 |
 | [SECURITY.md](SECURITY.md) | 脆弱性の連絡方法 |
 
