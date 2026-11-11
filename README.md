@@ -13,7 +13,7 @@
 [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json) で、手元に Node や pnpm を入れずに、`.node-version` と同じ Node と lockfile どおりの依存で動かせる。Vercel の実行環境を再現するものではない。
 
 1. VS Code の Dev Containers 拡張などで、リポジトリをコンテナで開く。作成時に `corepack pnpm install --frozen-lockfile` が走る
-2. コンテナの中で `pnpm lint`、`pnpm typecheck`、`pnpm test` を実行する
+2. コンテナの中で `pnpm lint`、`pnpm typecheck`、`pnpm test`、`pnpm build` を実行する
 
 `node_modules` はコンテナ専用の volume に置くので、手元の `node_modules` とは混ざらない。Next.js の開発サーバーの port 3000 は手元へ転送し、Next.js の匿名テレメトリーは止めてある（`NEXT_TELEMETRY_DISABLED=1`）。Node の版を上げるときは、`.node-version` とイメージのタグ・digest を一緒に直す。
 

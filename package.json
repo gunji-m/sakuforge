@@ -5,7 +5,8 @@
   "scripts": {
     "lint": "biome check .",
     "typecheck": "tsc --project packages/core/tsconfig.json && tsc --project apps/web/tsconfig.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build": "pnpm --filter @sakuforge/web build"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.4",

@@ -56,6 +56,7 @@ Install dependencies with `pnpm install --frozen-lockfile`, then run these comma
 - `pnpm lint`
 - `pnpm typecheck`
 - `pnpm test`
+- `pnpm build`
 
 Report commands exactly as run and do not claim unexecuted checks passed.
 
