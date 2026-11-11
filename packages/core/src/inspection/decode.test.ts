@@ -32,15 +32,21 @@ test("size is checked before decode, including BOM bytes", () => {
   });
 });
 
-test("string input is not decoded or measured in bytes and loses only its first BOM", () => {
-  expect(decodeCsv("\uFEFF\uFEFFsynthetic", 0)).toEqual({
+test("string input is not decoded and loses only its first BOM", () => {
+  expect(decodeCsv("\uFEFF\uFEFFsynthetic", 11)).toEqual({
     kind: "decoded",
     text: "\uFEFFsynthetic",
     encoding: null,
   });
-  expect(decodeCsv("synthetic\uFEFF", 0)).toEqual({
+  expect(decodeCsv("synthetic\uFEFF", 10)).toEqual({
     kind: "decoded",
     text: "synthetic\uFEFF",
     encoding: null,
   });
+});
+
+test("string size is counted in UTF-16 code units, including the BOM", () => {
+  // "あ" is one code unit and "𠮷" is two, whatever their UTF-8 byte counts.
+  expect(decodeCsv("\uFEFFあ𠮷", 4)).toEqual({ kind: "decoded", text: "あ𠮷", encoding: null });
+  expect(decodeCsv("\uFEFFあ𠮷", 3)).toEqual({ kind: "rejected", reason: "maxBytes" });
 });
