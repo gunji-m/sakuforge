@@ -11,7 +11,7 @@ Private vulnerability reporting
 このリポジトリは Public です。Issue、PR、コメントには合成データ以外を貼らないでください。
 
 - 実際の保有 CSV、資産値、スクリーンショット
-- 秘密情報、招待の合言葉
+- 秘密情報
 - 個人を特定できる情報
 
 扱いの原則は [入力を信用しない原則](docs/input-trust-principles.md) と

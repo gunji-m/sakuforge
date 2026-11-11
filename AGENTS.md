@@ -5,7 +5,7 @@
 - Validation and aggregation are in `packages/core`. The language is TypeScript (`docs/decisions/0003-language-typescript.md`). The app is placed on Vercel with Next.js, and CSV inspection and aggregation run in a server function that returns JSON (`docs/decisions/0004-vercel-nextjs-server-side.md`). The design is in `docs/design.md`.
 - `docs/` and the ADRs under `docs/decisions/` are the source of truth. Read `README.md` and the relevant files under `docs/` before making changes.
 - The declaration and its axes are in `docs/decisions/0001-declaration-and-origin.md`. Judge every change against them; when in doubt, choose the option less likely to cause problems.
-- This repository is public (`docs/decisions/0002-public-repository.md`). Never commit or post secrets, invitation passphrases, real data, stock master JSON, the content of individual replies from the Tokyo Stock Exchange, or personally identifying information.
+- This repository is public (`docs/decisions/0002-public-repository.md`). Never commit or post secrets, real data, stock master JSON, the content of individual replies from the Tokyo Stock Exchange, or personally identifying information.
 - The origin is tfdata-api at `4a25bc93e8dba5b8bce866d6707bce6415ec61da`. Its Python code is a reference for comparing results only; do not copy it.
 
 ## Architecture
@@ -13,7 +13,7 @@
 - Treat `docs/domain-rules.md` and `docs/input-trust-principles.md` as the source of truth for domain behavior and input handling.
 - Write validation and aggregation as pure functions in TypeScript, with no side effects (no storage, network, clock, randomness, or logging). Put them in `packages/core`; it must not depend on the UI, React, or Next.js.
 - Pass decimal values (amounts, share counts, composition ratios) as strings in and out of `packages/core`. Do not use binary floating point (`number`) for them.
-- Server functions are limited to invitation checks and CSV inspection and aggregation (ADR 0004). Never store the CSV or its results on the server, and never write CSV content, asset values, or file names to logs, errors, or monitoring.
+- Server functions are limited to CSV inspection and aggregation (ADR 0004, `docs/decisions/0006-unlisted-public-release.md`). Never store the CSV or its results on the server, and never write CSV content, asset values, or file names to logs, errors, or monitoring.
 - Use the stock master only inside server functions. Do not send it to the browser.
 
 ## Git workflow
@@ -31,7 +31,7 @@ The Issue workflow and development-layer procedures are in `docs/layer-operation
 - this file
 - adding or updating dependencies
 - CI and `.github/`
-- invitation checks and secrets
+- secrets
 - the stock master
 - Vercel settings
 

@@ -17,7 +17,6 @@ flowchart LR
   end
   subgraph vercel["Vercel のサーバー関数（saku-API）"]
     direction TB
-    inv["招待の確認"]
     core["検査と集計<br/>packages/core"]
   end
   local["開発者の手元<br/>月1回 銘柄マスター JSON を生成"]
@@ -28,8 +27,8 @@ flowchart LR
 ```
 
 ブラウザは CSV をサーバー関数へ送り、関数は核で検査と集計をして結果を JSON で返します。サーバーは CSV も
-結果も保存しません。銘柄マスターは関数の中だけで使い、ブラウザへ配りません（ADR 0004）。招待の確認の矢印は
-省いています。
+結果も保存しません。銘柄マスターは関数の中だけで使い、ブラウザへ配りません（ADR 0004）。招待の確認は
+ありません（[ADR 0006](decisions/0006-unlisted-public-release.md)）。
 
 ## 2. 純粋関数の境界
 
@@ -50,7 +49,6 @@ decode（UTF-8 と CP932）は核の中に置きます。`TextDecoder` は Node.
 
 - リクエストの受け取りと、サイズ上限+1 byte までの読み込み
 - 実行時間の上限。独自の時計は持たず、関数全体の `maxDuration` に任せる（[5](#5-vercel-の関数で処理するときの上限)）
-- 招待の確認
 - 銘柄マスター JSON の読み込みと検証（[外部データとの約束](external-data-policy.md)）
 - 結果 JSON への変換と、出典・基準日の付加
 - ログに内容を出さないこと（成否、件数、処理時間、固定 code だけ）
@@ -62,7 +60,7 @@ pnpm workspace は次の2つのパッケージで構成します。
 | パッケージ | 中身 | 依存してよいもの |
 | --- | --- | --- |
 | `@sakuforge/core`（`packages/core`） | CSV の検査、集計、型 | 10進演算と入力検証の最小限の依存だけ。React、Next.js、実行環境固有の API に依存しない |
-| `@sakuforge/web`（`apps/web`） | Next.js（App Router）の画面と、サーバー関数（招待の確認、検査と集計） | `@sakuforge/core` |
+| `@sakuforge/web`（`apps/web`） | Next.js（App Router）の画面と、サーバー関数（検査と集計） | `@sakuforge/core` |
 
 銘柄マスター JSON を生成する手元の道具をリポジトリに置くかどうかは、実装の PR で決めます。置く場合も
 生成物は `.gitignore` の `data/stock-master/` に出し、リポジトリに入れません。
