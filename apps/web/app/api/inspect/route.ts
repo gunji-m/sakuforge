@@ -51,3 +51,5 @@ export async function POST(request: Request): Promise<Response> {
     return errorResponse("internal_error");
   }
 }
+
+export const runtime = "bogus";
