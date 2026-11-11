@@ -7,6 +7,8 @@ type DecodeResult =
 
 export function decodeCsv(input: Uint8Array | string, maxBytes: number): DecodeResult {
   if (typeof input === "string") {
+    // Count UTF-16 code units: never more than the UTF-8 bytes of the same text, and no encoding pass.
+    if (input.length > maxBytes) return { kind: "rejected", reason: "maxBytes" };
     return { kind: "decoded", text: stripBom(input), encoding: null };
   }
   if (!(input instanceof Uint8Array)) return { kind: "rejected", reason: "invalid_input" };
