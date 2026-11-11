@@ -37,7 +37,7 @@ flowchart LR
 | | 内容 |
 | --- | --- |
 | 入力 | CSV のバイト列（`Uint8Array`）または decode 済みの文字列と、銘柄マスター（検証済みの値）。大きさの上限は、バイト列は byte 数、文字列は長さ（UTF-16 の符号単位の数）で数える |
-| 出力 | 検査結果（`valid`、件数、所見、照合結果）と集計結果。検査結果の形と構成計算の規則は[ドメイン規則](domain-rules.md)の6・7節。集計結果の項目は ADR 0005 の「流れ」の3、JSON の形は #21 |
+| 出力 | 検査結果（`valid`、件数、所見、照合結果）と集計結果。検査結果の形と構成計算の規則は[ドメイン規則](domain-rules.md)の6・7節。集計結果の項目は ADR 0005 の「流れ」の3、JSON の形は[8](#8-要求応答保存する-json-の形) |
 | 10進 | 金額・株数・構成比は文字列で受け渡し、核の中でも2進浮動小数点（`number`）で計算しない |
 | 例外 | 利用者向けの結果は固定 code と固定 message だけにする。例外の文字列を結果に入れない（[入力を信用しない原則](input-trust-principles.md)） |
 
@@ -80,16 +80,16 @@ pnpm workspace は次の2つのパッケージで構成します。
 
 | 上限 | 気にすること |
 | --- | --- |
-| サイズ 4 MiB、上限+1 byte まで読む | Vercel の関数の本文上限は公式資料で 4.5 MB（2026-11-01 確認、#20）。4 MiB+1 byte の CSV に multipart の付加分を足しても収まる値にした。これより大きい本文は関数に届く前に 413 になるので、画面で処理する。送信の実測で扱えなければ、ブラウザで検査する案（ADR 0004 の保険の案）に切り替える |
+| サイズ 4 MiB、上限+1 byte まで読む | Vercel の関数の本文上限は公式資料で 4.5 MB（2026-11-01 確認、#20）。本文は CSV だけなので（[8.1](#81-要求)）、4 MiB+1 byte まで読んでも収まる。これより大きい本文は関数に届く前に 413 になるので、画面で処理する。送信の実測で扱えなければ、ブラウザで検査する案（ADR 0004 の保険の案）に切り替える |
 | データ行 10,000、列 100 | 関数の memory と実行時間の中に収まるか（#20） |
 | 検査時間：関数全体の `maxDuration` | 独自の時計を持たない（同期の核は途中で止められないため）。値は Vercel 上の実測で決める（#20）。超えたら Vercel のエラー（504）になり、画面は失敗として扱う |
 | 所見 200 件、未知コードは全件（PR #22） | 応答 JSON の大きさを抑える。レスポンス本文にも 4.5 MB の上限がある（#20） |
-| ファイル名、MIME タイプ | ブラウザが送る値で信用しない。ログに出さない |
+| ファイル名、MIME タイプ | ファイル名はサーバーへ送らない。`Content-Type` は画面が固定で付ける値で、信用せず、内容検証の代わりにしない（[8.1](#81-要求)）。どちらもログに出さない |
 | ログと監視 | CSV の内容、資産値、ファイル名を、関数のログ、エラー、Vercel の監視に出さない（[入力を信用しない原則](input-trust-principles.md)の3節） |
 
 ## 6. ブラウザ側の結果と履歴
 
-ブラウザは返ってきた結果 JSON からダッシュボードを描き、次回以降の比較のために保持します。JSON の形は #21、
+ブラウザは返ってきた結果 JSON からダッシュボードを描き、次回以降の比較のために保持します。JSON の形は[8](#8-要求応答保存する-json-の形)、
 保存の場所と比較（時系列の総資産など）は #4 で決めます。比較は最初の範囲には含めません（ADR 0005）。
 
 ## 7. 層ごとの守りの分担
@@ -111,3 +111,142 @@ pnpm workspace は次の2つのパッケージで構成します。
 - 3 で、利用者の環境（ブラウザの拡張機能、端末の共用、ブラウザの同期）は利用者の責務で、どの層も受け持たない
 - Vercel の WAF・Pause Project の使える範囲と、ログ・環境変数に残るものは、配備（#44）のときに確かめる
 - CSV Formula Injection は 6 に含めない。セルの値を出力する機能を足すときに扱う（[入力を信用しない原則](input-trust-principles.md)の5節）
+
+## 8. 要求・応答・保存する JSON の形
+
+検査 API の要求と応答、ブラウザに保存する JSON の形を決めます（#21、2026-11-11）。核の戻り値はそのまま
+流さず、サーバー関数で組み直します（[2](#2-純粋関数の境界)の「結果 JSON への変換」）。例の値はすべて合成データです。
+
+### 8.1 要求
+
+- `POST /api/inspect`。本文は CSV のバイト列だけにする。multipart にしない
+- `Content-Type` は `text/csv`（`application/vnd.ms-excel` も受ける）。画面が固定で付ける。ブラウザが
+  ファイルに付ける種類は端末に依るので、使わない
+- ファイル名は送らない（[7](#7-層ごとの守りの分担)の 3 行目）。ファイル名の規則（[ドメイン規則](domain-rules.md)の1節）は、
+  画面がファイルを選ばせるときに確かめる
+
+### 8.2 応答（検査まで進んだとき、HTTP 200）
+
+```json
+{
+  "schemaVersion": 1,
+  "result": "aggregated",
+  "inspection": {
+    "valid": true,
+    "profile": "domestic_cash_holdings_v1",
+    "encoding": "utf-8",
+    "rowsScanned": 3,
+    "findings": [
+      {
+        "code": "stock_code_unknown",
+        "severity": "warning",
+        "message": "銘柄マスターに無い証券コードがあります。該当銘柄は「未分類」として集計しました。"
+      }
+    ],
+    "errorCount": 0,
+    "warningCount": 1,
+    "totalCount": 1,
+    "returnedCount": 1,
+    "truncated": false,
+    "stockCodeMatch": { "status": "checked", "unknownCodes": ["9D9D"], "unknownCount": 1 }
+  },
+  "aggregation": {
+    "totalAssetValue": "128100",
+    "annualDividend": { "lower": "4011", "upper": "5011" },
+    "sector17": {
+      "status": "computed",
+      "sectors": [
+        { "code": "1", "name": "合成業種1", "ratio": "93.68" },
+        { "code": "2", "name": "合成業種2", "ratio": "6.25" },
+        { "code": null, "name": null, "ratio": "0.08" }
+      ]
+    },
+    "sector33": {
+      "status": "computed",
+      "sectors": [
+        { "code": "1", "name": "合成業種1", "ratio": "93.68" },
+        { "code": "2", "name": "合成業種2", "ratio": "6.25" },
+        { "code": null, "name": null, "ratio": "0.08" }
+      ]
+    }
+  },
+  "stockMaster": { "source": "株式会社東京証券取引所「東証上場銘柄一覧」", "asOf": "2026-10-31" }
+}
+```
+
+| 項目 | 内容 |
+| --- | --- |
+| `schemaVersion` | 応答の版（[8.6](#86-版)） |
+| `result` | `aggregated`（検査 OK。`aggregation` がある）または `inspection_failed`（検査 NG。`aggregation` が無い） |
+| `inspection` | 検査結果。項目は[ドメイン規則](domain-rules.md)の6節。位置を持つ所見には `row`、`column`、`field` が付く。`stockCodeMatch.status` は `checked` または `not_checked`（`not_checked` のときは一覧と総数が無い） |
+| `aggregation` | 集計結果。規則は[ドメイン規則](domain-rules.md)の7・8節 |
+| `stockMaster` | 銘柄マスターの出典（`source`）と基準日（`asOf`）。HTTP 200 の応答に常に付ける。未知の証券コードの一覧も銘柄マスター由来の情報なので、検査 NG のときも要る（[外部データとの約束](external-data-policy.md)の3節） |
+
+- 合計が 0 のときは `aggregated` のまま、`sector17`・`sector33` が `{ "status": "not_computable", "sectors": [] }` に
+  なる。検査 NG と区別できる
+- 未分類は `code` と `name` が `null`。表示名は画面で付ける
+- 核の内部の印（`kind`）は応答に入れない
+
+### 8.3 応答（検査へ進めなかったとき、HTTP 4xx・5xx）
+
+```json
+{ "schemaVersion": 1, "error": { "code": "csv_too_large", "message": "CSVが大きすぎます。4 MiB以下のファイルを選んでください。" } }
+```
+
+| code | HTTP | 意味 |
+| --- | --- | --- |
+| `request_body_unreadable` | 400 | 本文を読み取れなかった |
+| `csv_too_large` | 413 | 4 MiB を超えた |
+| `unsupported_media_type` | 415 | `Content-Type` が受け付ける値でない |
+| `csv_too_many_rows` | 422 | データ行が上限を超えた |
+| `csv_too_many_columns` | 422 | 列が上限を超えた |
+| `internal_error` | 500 | それ以外。壊れた銘柄マスター（核の `invalid_stock_master`）もここにまとめる（利用者に直せないため） |
+
+- message は固定の文言で、例外の文字列、セルの値、ファイル名を含めない
+- Vercel が返す 413・504 などは JSON とは限らない。画面は、HTTP 200 で形の合う応答だけを結果として扱う
+  （[7](#7-層ごとの守りの分担)の 5 行目）
+- すべての応答に `Cache-Control: no-store` を付ける
+
+### 8.4 値の型と桁
+
+| 値 | 形 |
+| --- | --- |
+| 金額（`totalAssetValue`、`annualDividend.lower`・`upper`） | 丸めない 10 進の文字列。指数表記にしない。末尾のゼロは付けない。最大で整数部 24 桁・小数 8 桁 |
+| 構成比（`ratio`） | 小数 2 桁の文字列（`"0.00"`、`"100.00"`） |
+| 件数、行番号、列番号 | JSON の数値（整数） |
+| 基準日（`asOf`） | `YYYY-MM-DD` の文字列 |
+
+画面の表示では、金額を円未満で四捨五入（half up）し、3 桁区切りにします。文字列のまま処理し、`number` に
+変換しません。JSON の値は丸めません。
+
+### 8.5 ブラウザに保存する JSON
+
+```json
+{
+  "schemaVersion": 1,
+  "savedAt": "2026-11-11T09:00:00.000Z",
+  "aggregation": {
+    "totalAssetValue": "128100",
+    "annualDividend": { "lower": "4011", "upper": "5011" },
+    "sector17": { "status": "computed", "sectors": [{ "code": "1", "name": "合成業種1", "ratio": "100.00" }] },
+    "sector33": { "status": "computed", "sectors": [{ "code": "1", "name": "合成業種1", "ratio": "100.00" }] }
+  },
+  "stockMaster": { "source": "株式会社東京証券取引所「東証上場銘柄一覧」", "asOf": "2026-10-31" },
+  "summary": { "rowsScanned": 3, "unknownCount": 1 }
+}
+```
+
+- 保存するのは、グラフと数字を描くのに要る集計結果だけにする。`aggregated` の結果だけを保存し、検査 NG は
+  保存しない
+- `aggregation` と `stockMaster` は応答と同じ形
+- `summary` は件数だけを持つ（走査した行数と、未知の証券コードの数）
+- `savedAt` はブラウザの時計で付ける取り込み日時。CSV の価格がいつの値かは CSV から分からないので、
+  「取り込み日時」としてだけ表示する
+- 入れないもの：保有明細（API が返さないので、ブラウザは持てない）、所見、未知の証券コードの一覧、ファイル名
+- 保存の場所・件数・消し方は #67、保存した結果どうしの比較は #4 で決める
+
+### 8.6 版
+
+- `schemaVersion` は整数で、応答と保存する JSON の両方に付ける。今は 1
+- 保存した JSON を読むとき、知らない版と形の合わないものは表示に使わず、消さない
+- 版を上げるときは、古い版を読み替える処理を足す
