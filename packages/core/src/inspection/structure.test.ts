@@ -1,6 +1,5 @@
 import { expect, test } from "vitest";
 import {
-  checkCsvStructure,
   createFinding,
   DEFAULT_INSPECTION_LIMITS,
   FINDING_FIELDS,
@@ -8,8 +7,9 @@ import {
   HOLDINGS_COLUMNS,
   HOLDINGS_PROFILE,
   type InspectionLimits,
-  type StructureInspection,
 } from "../index";
+import { checkCsvStructure } from "./structure";
+import type { StructureInspection } from "./types";
 
 const header =
   "銘柄,銘柄,銘柄,預り区分,保有株数,取得単価,現在値,現在値,評価損益,評価損益(%),買付金額,評価額,前日終値,前日比,前日比(%),評価額前日比,予想PER(倍),実績PBR(倍),予想配当利回り(%),予想EPS,実績BPS,予想1株配当";
@@ -121,9 +121,9 @@ test("CP932 header bytes are assembled in the test, followed by synthetic ASCII 
   });
 });
 
-test("strings stay strings, with no byte-size assumption or value rules", () => {
+test("strings stay strings, with no value rules", () => {
   const invalidValues = Array<string>(22).fill("not-validated");
-  expect(checked(`\uFEFF${header}\n${invalidValues.join(",")}`, { maxBytes: 0 })).toMatchObject({
+  expect(checked(`\uFEFF${header}\n${invalidValues.join(",")}`)).toMatchObject({
     encoding: null,
     findings: [],
     records: [{ row: 2, cells: invalidValues }],
@@ -297,6 +297,15 @@ test("byte limit accepts exactly the limit and rejects +1 before decoding or sca
     reason: "maxBytes",
   });
   expect(checkCsvStructure(new Uint8Array(4 * 1024 * 1024 + 1))).toEqual({
+    kind: "rejected",
+    reason: "maxBytes",
+  });
+});
+
+test("string limit accepts exactly the limit and rejects +1 code unit", () => {
+  const text = `${header}\n${data}`;
+  expect(checked(text, { maxBytes: text.length }).findings).toEqual([]);
+  expect(checkCsvStructure(`${text}\n`, { maxBytes: text.length })).toEqual({
     kind: "rejected",
     reason: "maxBytes",
   });

@@ -10,10 +10,8 @@ export { inspectAndAggregateHoldingsCsv } from "./holdings/inspect-and-aggregate
 export type { HoldingsCsvResult } from "./holdings/types";
 export { createFinding, summarizeFindings } from "./inspection/findings";
 export { inspectHoldingsCsv } from "./inspection/inspect";
-export { checkCsvStructure } from "./inspection/structure";
 export type {
   CsvEncoding,
-  CsvRecord,
   Finding,
   FindingCode,
   FindingCounts,
@@ -21,7 +19,6 @@ export type {
   FindingPosition,
   FindingSeverity,
   FindingSummary,
-  HoldingsColumnIndexes,
   HoldingsInspection,
   InspectionLimits,
   LimitRejection,
@@ -29,8 +26,6 @@ export type {
   StockMaster,
   StockMasterEntry,
   StockMasterSector,
-  StructureInspection,
-  StructureResult,
 } from "./inspection/types";
 export {
   DEFAULT_INSPECTION_LIMITS,
