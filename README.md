@@ -17,6 +17,26 @@
 
 `node_modules` はコンテナ専用の volume に置くので、手元の `node_modules` とは混ざらない。Next.js の開発サーバーの port 3000 は手元へ転送し、Next.js の匿名テレメトリーは止めてある（`NEXT_TELEMETRY_DISABLED=1`）。Node の版を上げるときは、`.node-version` とイメージのタグ・digest を一緒に直す。
 
+### ローカルで API を動かして確かめる
+
+画面はまだ無いので、確かめられるのは検査 API（`POST /api/inspect`）だけ。銘柄マスターは合成の 2 銘柄（`9A9A`、`9C9C`）で動く。
+
+1. コンテナの中で開発サーバーを起動する
+
+   ```bash
+   pnpm --filter @sakuforge/web dev
+   ```
+
+2. 別のターミナルから、合成の CSV を送る。`"result":"aggregated"` を含む JSON が返れば動いている
+
+   ```bash
+   printf '銘柄,保有株数,取得単価,現在値,予想1株配当\n9A9A,100,1000,1200,40 ~ 50\n9C9C,10,700,800,1\n' | curl -s -X POST -H 'Content-Type: text/csv' --data-binary @- http://localhost:3000/api/inspect
+   ```
+
+要求と応答の形は [docs/design.md](docs/design.md) の 8 節にある。
+
+実際の CSV で試すときは、ファイルを `local-data/`（`.gitignore` 済み）に置き、`--data-binary @local-data/<ファイル名>` で送る。応答とスクリーンショットを Issue や PR に貼らない。銘柄マスターは合成のままなので、実在の証券コードはすべて「銘柄マスターに無い」になり、業種構成は「未分類」だけになる（評価額の合計と年間配当見込みは計算される）。
+
 ## 文書
 
 | 文書 | 中身 |
