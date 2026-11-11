@@ -1,10 +1,10 @@
 # sakuforge
 
-開発者以外の少数の利用者に、招待で使ってもらう。品質と安全を優先し、公開しても問題を起こさない
+開発者以外の人にも、URL を知っていれば使える形で公開する。品質と安全を優先し、公開しても問題を起こさない
 サービスにする。宣伝はしない。開発者自身が内部を理解できる大きさに保つ。利用者データを預からない
 （CSV を受け取って検査・集計の結果を返すだけで、保存しない）。
 
-- 状態: 準備中。言語は TypeScript（[ADR 0003](docs/decisions/0003-language-typescript.md)）。配置は Vercel と Next.js で、CSV の検査と集計はサーバー関数で行い結果を JSON で返す（[ADR 0004](docs/decisions/0004-vercel-nextjs-server-side.md)）。最初の招待で提供する範囲は [ADR 0005](docs/decisions/0005-first-invitation-scope.md)
+- 状態: 準備中。言語は TypeScript（[ADR 0003](docs/decisions/0003-language-typescript.md)）。配置は Vercel と Next.js で、CSV の検査と集計はサーバー関数で行い結果を JSON で返す（[ADR 0004](docs/decisions/0004-vercel-nextjs-server-side.md)）。最初に提供する範囲は [ADR 0005](docs/decisions/0005-first-invitation-scope.md)。招待制はやめ、宣伝しない公開にする（[ADR 0006](docs/decisions/0006-unlisted-public-release.md)）
 - 出自: 出自は tfdata-api の main `4a25bc93e8dba5b8bce866d6707bce6415ec61da`。判断の履歴はそちら。
 - 全体の入口: #45 sakuforge の段階と進め方
 
