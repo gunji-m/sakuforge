@@ -1,6 +1,5 @@
 import { expect, test } from "vitest";
 import {
-  checkCsvStructure,
   createFinding,
   DEFAULT_INSPECTION_LIMITS,
   FINDING_MESSAGES,
@@ -11,6 +10,7 @@ import {
   type StockMaster,
   type StockMasterEntry,
 } from "../index";
+import { checkCsvStructure } from "./structure";
 
 const header =
   "銘柄,銘柄,銘柄,預り区分,保有株数,取得単価,現在値,現在値,評価損益,評価損益(%),買付金額,評価額,前日終値,前日比,前日比(%),評価額前日比,予想PER(倍),実績PBR(倍),予想配当利回り(%),予想EPS,実績BPS,予想1株配当";
@@ -490,6 +490,7 @@ test.each([
   [csv(cells(), cells()), { maxDataRows: 1 }],
   [csv(cells()), { maxColumns: 21 }],
   [utf8(csv(cells())), { maxBytes: 1 }],
+  [csv(cells()), { maxBytes: 1 }],
   [null, {}],
 ] as const)("structure rejections pass through unchanged", (input, limits) => {
   const expected = checkCsvStructure(input as never, limits);
