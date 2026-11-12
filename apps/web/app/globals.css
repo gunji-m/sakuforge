@@ -437,6 +437,45 @@ button,
   text-align: right;
 }
 
+.bar-unheld-head {
+  display: none;
+}
+
+/* On narrow screens, sectors without holdings collapse into a wrapped list of names. */
+@media (max-width: 640px) {
+  .bars {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 12px;
+  }
+
+  .bar-row {
+    width: 100%;
+  }
+
+  .bar-unheld-head {
+    display: block;
+    width: 100%;
+    margin-top: 12px;
+    padding: 3px 0;
+    color: var(--text-sub);
+  }
+
+  .bar-row-unheld {
+    display: block;
+    width: auto;
+    color: var(--text-sub);
+    border-bottom: 1px dashed var(--rule);
+    margin-bottom: 4px;
+    padding: 2px 0 1px;
+  }
+
+  .bar-row-unheld .bar-track,
+  .bar-row-unheld .bar-value {
+    display: none;
+  }
+}
+
 @media (max-width: 900px) {
   .charts {
     grid-template-columns: minmax(0, 1fr);

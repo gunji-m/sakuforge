@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import type { Aggregation, SectorComposition } from "./api-response";
 import { barRows, formatPercent, OTHER_COLOR, summarizeDonut } from "./sectors";
 
@@ -100,28 +100,35 @@ function Bars({
   readonly twoColumns: boolean;
 }) {
   const rows = barRows(composition);
+  const firstUnheld = rows.findIndex((row) => !row.held);
   return (
     <ul className={twoColumns ? "bars bars-two" : "bars"}>
-      {rows.map(({ key, label, held, percent, width }) => (
-        <li key={key} className="bar-row">
-          <span className="bar-label">{label}</span>
-          <svg
-            className="bar-track"
-            viewBox="0 0 100 10"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-          >
-            {held ? (
-              <>
-                <rect width="100" height="10" className="bar-ground" />
-                <rect width={width} height="10" className="bar-fill" />
-              </>
-            ) : (
-              <line x1="0" y1="5" x2="100" y2="5" className="bar-unheld" />
-            )}
-          </svg>
-          <span className="bar-value">{held ? percent : "—"}</span>
-        </li>
+      {rows.map(({ key, label, held, percent, width }, index) => (
+        <Fragment key={key}>
+          {!held && index === firstUnheld && (
+            // Shown on narrow screens only, where the rows below collapse into a list of names.
+            <li className="bar-unheld-head">保有の無い業種（{rows.length - firstUnheld} 件）</li>
+          )}
+          <li className={held ? "bar-row" : "bar-row bar-row-unheld"}>
+            <span className="bar-label">{label}</span>
+            <svg
+              className="bar-track"
+              viewBox="0 0 100 10"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              {held ? (
+                <>
+                  <rect width="100" height="10" className="bar-ground" />
+                  <rect width={width} height="10" className="bar-fill" />
+                </>
+              ) : (
+                <line x1="0" y1="5" x2="100" y2="5" className="bar-unheld" />
+              )}
+            </svg>
+            <span className="bar-value">{held ? percent : "—"}</span>
+          </li>
+        </Fragment>
       ))}
     </ul>
   );
