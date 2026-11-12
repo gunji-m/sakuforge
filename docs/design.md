@@ -132,6 +132,8 @@ JSON と生成の道具は非公開のリポジトリに置き、このリポジ
 | `stocks` | 銘柄ごとの 証券コード、17 業種の code と name、33 業種の code と name。業種が無い銘柄は `null` |
 
 - 会社名は入れない。照合と構成計算に要る項目だけにする（[外部データとの約束](external-data-policy.md)の2節）
+- 業種の一覧（保有の無い業種を出すためのもの。[ドメイン規則](domain-rules.md)の7節）は、`stocks` に出てくる業種から
+  作る。JSON に業種の一覧を別には持たない
 - 33 業種の code は、東証の一覧の値を、先頭にゼロを足さず数字の文字列で持つ（`"50"`、`"1050"`）。核は数値として
   並べるので、表記で結果は変わらない
 - `stocks` は配列にする。証券コードを key にした object は、同じ key が重なっても読み込みで気づけないため
@@ -202,7 +204,7 @@ JSON と生成の道具は非公開のリポジトリに置き、このリポジ
 | --- | --- | --- |
 | 評価額の合計、年間配当見込み（下限〜上限） | 入れる | 数字だけを出す |
 | 業種構成のドーナツ、業種別の横棒、17／33 業種の切替 | 入れる | 規則は[ドメイン規則](domain-rules.md)の7節 |
-| 保有していない業種を横棒に点線で出す | 入れる | 今の規則と応答は、保有のある業種だけを返す。規則と応答の形を #81 で決めてから実装する |
+| 保有していない業種を横棒に点線で出す | 入れる | 応答の `sectors` の、`held` が `false` の行を点線で出す（[8.2](#82-応答検査まで進んだときhttp-200)、[ドメイン規則](domain-rules.md)の7節。#81） |
 | 通知の帯 | 入れる | 未知の証券コードは、コードの一覧（開閉式）だけを出す。行番号を持つ所見（検査 NG のとき）は、code ごとの固定 message と行番号の一覧を出す。問題が無ければ帯を出さない |
 | 出典と基準日 | 入れる | [外部データとの約束](external-data-policy.md)の3節 |
 | 「保存した結果を消す」 | 入れる | [6.2](#62-保存) |
@@ -299,17 +301,19 @@ JSON と生成の道具は非公開のリポジトリに置き、このリポジ
     "sector17": {
       "status": "computed",
       "sectors": [
-        { "code": "1", "name": "合成業種1", "ratio": "93.68" },
-        { "code": "2", "name": "合成業種2", "ratio": "6.25" },
-        { "code": null, "name": null, "ratio": "0.08" }
+        { "code": "1", "name": "合成業種1", "ratio": "93.68", "held": true },
+        { "code": "2", "name": "合成業種2", "ratio": "6.25", "held": true },
+        { "code": null, "name": null, "ratio": "0.08", "held": true },
+        { "code": "3", "name": "合成業種3", "ratio": "0.00", "held": false }
       ]
     },
     "sector33": {
       "status": "computed",
       "sectors": [
-        { "code": "1", "name": "合成業種1", "ratio": "93.68" },
-        { "code": "2", "name": "合成業種2", "ratio": "6.25" },
-        { "code": null, "name": null, "ratio": "0.08" }
+        { "code": "1", "name": "合成業種1", "ratio": "93.68", "held": true },
+        { "code": "2", "name": "合成業種2", "ratio": "6.25", "held": true },
+        { "code": null, "name": null, "ratio": "0.08", "held": true },
+        { "code": "3", "name": "合成業種3", "ratio": "0.00", "held": false }
       ]
     }
   },
@@ -328,6 +332,11 @@ JSON と生成の道具は非公開のリポジトリに置き、このリポジ
 - 合計が 0 のときは `aggregated` のまま、`sector17`・`sector33` が `{ "status": "not_computable", "sectors": [] }` に
   なる。検査 NG と区別できる
 - 未分類は `code` と `name` が `null`。表示名は画面で付ける
+- `sectors` の各行の `held` は、その業種を保有しているかどうか。保有の無い業種は、構成比 `"0.00"`・`held` が
+  `false` で、保有のある行の後ろに並ぶ（[ドメイン規則](domain-rules.md)の7節）。丸めて `"0.00"` になった保有のある
+  業種とは、`held` で区別する
+- 画面は、`held` が `false` の行を横棒に点線で出し、ドーナツには出さない。ドーナツの中央の「保有業種数／
+  総業種数」は、分類済み（`code` が `null` でない）の行のうち `held` が `true` の数と、分類済みの行の総数から作る
 - 核の内部の印（`kind`）は応答に入れない
 - 合成の銘柄マスターで動く環境（[4.5](#45-環境ごとの銘柄マスター)）では、`stockMaster.source` は合成データであることを示す固定文に
   なる。東証の名前を、東証のデータでないものに付けないためです
@@ -373,8 +382,8 @@ JSON と生成の道具は非公開のリポジトリに置き、このリポジ
   "aggregation": {
     "totalAssetValue": "128100",
     "annualDividend": { "lower": "4011", "upper": "5011" },
-    "sector17": { "status": "computed", "sectors": [{ "code": "1", "name": "合成業種1", "ratio": "100.00" }] },
-    "sector33": { "status": "computed", "sectors": [{ "code": "1", "name": "合成業種1", "ratio": "100.00" }] }
+    "sector17": { "status": "computed", "sectors": [{ "code": "1", "name": "合成業種1", "ratio": "100.00", "held": true }] },
+    "sector33": { "status": "computed", "sectors": [{ "code": "1", "name": "合成業種1", "ratio": "100.00", "held": true }] }
   },
   "stockMaster": { "source": "株式会社東京証券取引所「東証上場銘柄一覧」", "asOf": "2026-10-31" },
   "summary": { "rowsScanned": 3, "unknownCount": 1 }
