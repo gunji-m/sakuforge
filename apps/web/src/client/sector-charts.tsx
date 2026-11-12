@@ -161,7 +161,7 @@ export function SectorCharts({ aggregation }: { readonly aggregation: Aggregatio
         <div className="bars-head">
           <h2>業種別の構成比、%</h2>
           <div className="bars-tools">
-            <span className="figure-note">持っていない業種は点線</span>
+            <span className="figure-note bars-note">持っていない業種は点線</span>
             <div className="toggle">
               {AXES.map((option) => (
                 <button
