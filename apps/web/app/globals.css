@@ -524,3 +524,23 @@ button,
   font-size: 13px;
   color: var(--text-sub);
 }
+
+/* On narrow screens, controls are large enough to press with a finger. */
+@media (max-width: 640px) {
+  .notice-close {
+    min-width: 44px;
+    min-height: 44px;
+    margin: -8px -8px 0 0;
+  }
+
+  .toggle-option {
+    min-height: 44px;
+    padding: 4px 18px;
+    font-size: 13px;
+  }
+
+  /* Sectors without holdings are folded here, so the note about dotted lines does not apply. */
+  .bars-note {
+    display: none;
+  }
+}
