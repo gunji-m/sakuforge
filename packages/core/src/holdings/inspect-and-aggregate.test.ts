@@ -105,7 +105,11 @@ test("unknown stock codes remain valid with a warning and aggregate as unclassif
   for (const axis of ["sector17", "sector33"] as const) {
     expect(result.aggregation[axis]).toEqual({
       status: "computed",
-      sectors: [{ code: null, name: null, ratio: "100.00" }],
+      sectors: [
+        { code: null, name: null, ratio: "100.00", held: true },
+        { code: "1", name: "合成業種1", ratio: "0.00", held: false },
+        { code: "2", name: "合成業種2", ratio: "0.00", held: false },
+      ],
     });
   }
 });
@@ -122,7 +126,10 @@ test("duplicate stock codes sum every row into one sector per axis", () => {
   for (const axis of ["sector17", "sector33"] as const) {
     expect(result.aggregation[axis]).toEqual({
       status: "computed",
-      sectors: [{ code: "1", name: "合成業種1", ratio: "100.00" }],
+      sectors: [
+        { code: "1", name: "合成業種1", ratio: "100.00", held: true },
+        { code: "2", name: "合成業種2", ratio: "0.00", held: false },
+      ],
     });
   }
 });

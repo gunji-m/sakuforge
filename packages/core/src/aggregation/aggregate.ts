@@ -47,6 +47,7 @@ function addSector(
 function composition(
   totals: ReadonlyMap<string | null, SectorTotal>,
   total: Decimal,
+  masterSectors: ReadonlyMap<string, StockMasterSector>,
 ): SectorComposition {
   if (total.isZero()) return { status: "not_computable", sectors: [] };
   const sectors: SectorShare[] = [...totals.values()].map(({ sector, value }) => {
@@ -56,8 +57,8 @@ function composition(
       .toDecimalPlaces(2, Decimal.ROUND_HALF_UP)
       .toFixed(2);
     return sector === null
-      ? { code: null, name: null, ratio }
-      : { code: sector.code, name: sector.name, ratio };
+      ? { code: null, name: null, ratio, held: true }
+      : { code: sector.code, name: sector.name, ratio, held: true };
   });
   sectors.sort((left, right) => {
     const byRatio = new Arithmetic(right.ratio).comparedTo(left.ratio);
@@ -66,6 +67,11 @@ function composition(
     if (right.code === null) return -1;
     return Number(left.code) - Number(right.code);
   });
+  // Sectors with no holdings follow the held rows, in numeric code order.
+  const unheld = [...masterSectors.values()]
+    .filter(({ code }) => !totals.has(code))
+    .sort((left, right) => Number(left.code) - Number(right.code));
+  for (const { code, name } of unheld) sectors.push({ code, name, ratio: "0.00", held: false });
   return { status: "computed", sectors };
 }
 
@@ -124,12 +130,31 @@ export function aggregateHoldings(
       addSector(sector17Totals, sector17, assetValue);
       addSector(sector33Totals, sector33, assetValue);
     }
+
+    // Every sector the master knows, so that sectors without holdings can be listed too.
+    reason = "invalid_stock_master";
+    const masterSectors17 = new Map<string, StockMasterSector>();
+    const masterSectors33 = new Map<string, StockMasterSector>();
+    for (const entry of stockMaster.values()) {
+      if (entry === null || typeof entry !== "object") return { kind: "rejected", reason };
+      const parsed17 = readSector(entry.sector17, "sector17");
+      const parsed33 = readSector(entry.sector33, "sector33");
+      if (parsed17 === undefined || parsed33 === undefined) return { kind: "rejected", reason };
+      if (parsed17 !== null && !masterSectors17.has(parsed17.code)) {
+        masterSectors17.set(parsed17.code, parsed17);
+      }
+      if (parsed33 !== null && !masterSectors33.has(parsed33.code)) {
+        masterSectors33.set(parsed33.code, parsed33);
+      }
+    }
+    reason = "invalid_input";
+
     return {
       kind: "aggregation",
       totalAssetValue: totalAssetValue.toFixed(),
       annualDividend: { lower: lowerDividend.toFixed(), upper: upperDividend.toFixed() },
-      sector17: composition(sector17Totals, totalAssetValue),
-      sector33: composition(sector33Totals, totalAssetValue),
+      sector17: composition(sector17Totals, totalAssetValue, masterSectors17),
+      sector33: composition(sector33Totals, totalAssetValue, masterSectors33),
     };
   } catch {
     return { kind: "rejected", reason };

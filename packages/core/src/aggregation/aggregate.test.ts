@@ -35,11 +35,11 @@ test("CSV cell spellings are parsed without mutating frozen rows or master entri
     annualDividend: { lower: "2475", upper: "3709.5" },
     sector17: {
       status: "computed",
-      sectors: [{ code: "1", name: "合成業種", ratio: "100.00" }],
+      sectors: [{ code: "1", name: "合成業種", ratio: "100.00", held: true }],
     },
     sector33: {
       status: "computed",
-      sectors: [{ code: "1", name: "合成業種", ratio: "100.00" }],
+      sectors: [{ code: "1", name: "合成業種", ratio: "100.00", held: true }],
     },
   });
 });
@@ -58,8 +58,14 @@ test("duplicate stock codes add every row and mixed dividends keep both annual b
     kind: "aggregation",
     totalAssetValue: "800",
     annualDividend: { lower: "32.5", upper: "52.5" },
-    sector17: { status: "computed", sectors: [{ code: "1", name: "合成業種", ratio: "100.00" }] },
-    sector33: { status: "computed", sectors: [{ code: "1", name: "合成業種", ratio: "100.00" }] },
+    sector17: {
+      status: "computed",
+      sectors: [{ code: "1", name: "合成業種", ratio: "100.00", held: true }],
+    },
+    sector33: {
+      status: "computed",
+      sectors: [{ code: "1", name: "合成業種", ratio: "100.00", held: true }],
+    },
   });
 });
 
@@ -76,15 +82,15 @@ test("unlike tfdata-api, unknown stocks contribute to assets, both dividend boun
     sector17: {
       status: "computed",
       sectors: [
-        { code: "1", name: "合成業種", ratio: "50.00" },
-        { code: null, name: null, ratio: "50.00" },
+        { code: "1", name: "合成業種", ratio: "50.00", held: true },
+        { code: null, name: null, ratio: "50.00", held: true },
       ],
     },
     sector33: {
       status: "computed",
       sectors: [
-        { code: "1", name: "合成業種", ratio: "50.00" },
-        { code: null, name: null, ratio: "50.00" },
+        { code: "1", name: "合成業種", ratio: "50.00", held: true },
+        { code: null, name: null, ratio: "50.00", held: true },
       ],
     },
   });
@@ -112,15 +118,15 @@ test("unlike tfdata-api, sector33 is aggregated independently using the same rul
     sector17: {
       status: "computed",
       sectors: [
-        { code: "1", name: "最初の17業種", ratio: "63.64" },
-        { code: null, name: null, ratio: "36.36" },
+        { code: "1", name: "最初の17業種", ratio: "63.64", held: true },
+        { code: null, name: null, ratio: "36.36", held: true },
       ],
     },
     sector33: {
       status: "computed",
       sectors: [
-        { code: null, name: null, ratio: "54.55" },
-        { code: "1050", name: "合成33業種", ratio: "45.45" },
+        { code: null, name: null, ratio: "54.55", held: true },
+        { code: "1050", name: "合成33業種", ratio: "45.45", held: true },
       ],
     },
   });
@@ -148,9 +154,9 @@ test.each(axes)("%s leaves three rounded thirds at 99.99 without correction", (a
   expect(result[axis]).toEqual({
     status: "computed",
     sectors: [
-      { code: "1", name: "合成業種", ratio: "33.33" },
-      { code: "2", name: "合成業種", ratio: "33.33" },
-      { code: "3", name: "合成業種", ratio: "33.33" },
+      { code: "1", name: "合成業種", ratio: "33.33", held: true },
+      { code: "2", name: "合成業種", ratio: "33.33", held: true },
+      { code: "3", name: "合成業種", ratio: "33.33", held: true },
     ],
   });
 });
@@ -168,8 +174,8 @@ test.each(axes)("%s leaves 87.66 plus 12.35 at 100.01 without correction", (axis
   expect(result[axis]).toEqual({
     status: "computed",
     sectors: [
-      { code: "1", name: "合成業種", ratio: "87.66" },
-      { code: "2", name: "合成業種", ratio: "12.35" },
+      { code: "1", name: "合成業種", ratio: "87.66", held: true },
+      { code: "2", name: "合成業種", ratio: "12.35", held: true },
     ],
   });
 });
@@ -190,7 +196,12 @@ test.each([
   expect(result.kind).toBe("aggregation");
   if (result.kind !== "aggregation") return;
   for (const axis of axes) {
-    expect(result[axis].sectors).toContainEqual({ code: "1", name: "合成業種", ratio });
+    expect(result[axis].sectors).toContainEqual({
+      code: "1",
+      name: "合成業種",
+      ratio,
+      held: true,
+    });
   }
 });
 
@@ -207,15 +218,15 @@ test.each(axes)("%s sorts rounded ties by numeric code, with unclassified last",
   expect(result[axis]).toEqual({
     status: "computed",
     sectors: [
-      { code: "2", name: "合成業種", ratio: "33.33" },
-      { code: "10", name: "合成業種", ratio: "33.33" },
-      { code: null, name: null, ratio: "33.33" },
+      { code: "2", name: "合成業種", ratio: "33.33", held: true },
+      { code: "10", name: "合成業種", ratio: "33.33", held: true },
+      { code: null, name: null, ratio: "33.33", held: true },
     ],
   });
 });
 
 test.each(axes)(
-  "%s keeps zero-valued and rounded-to-zero sectors and omits unheld sectors",
+  "%s keeps zero-valued and rounded-to-zero sectors as held and lists unheld sectors last",
   (axis) => {
     const result = aggregateHoldings(
       [
@@ -239,15 +250,121 @@ test.each(axes)(
     expect(result[axis]).toEqual({
       status: "computed",
       sectors: [
-        { code: "1", name: "合成業種", ratio: "100.00" },
-        { code: "2", name: "合成業種", ratio: "0.00" },
-        { code: "3", name: "合成業種", ratio: "0.00" },
-        { code: "4", name: "合成業種", ratio: "0.00" },
-        { code: null, name: null, ratio: "0.00" },
+        { code: "1", name: "合成業種", ratio: "100.00", held: true },
+        { code: "2", name: "合成業種", ratio: "0.00", held: true },
+        { code: "3", name: "合成業種", ratio: "0.00", held: true },
+        { code: "4", name: "合成業種", ratio: "0.00", held: true },
+        { code: null, name: null, ratio: "0.00", held: true },
+        { code: "9", name: "合成業種", ratio: "0.00", held: false },
       ],
     });
   },
 );
+
+test.each(axes)("%s lists unheld sectors after held rows in numeric code order", (axis) => {
+  const result = aggregateHoldings(
+    [row("1001", "1"), row("1002", "3"), row("1009", "0")],
+    new Map([
+      ["1001", entry("12", "合成業種12")],
+      ["1002", entry("3", "合成業種3")],
+      ["1003", entry("10", "合成業種10")],
+      ["1004", entry("2", "合成業種2")],
+      ["1005", entry("10", "合成業種10")],
+      ["1006", entry(null)],
+    ]),
+  );
+  expect(result.kind).toBe("aggregation");
+  if (result.kind !== "aggregation") return;
+  expect(result[axis]).toEqual({
+    status: "computed",
+    sectors: [
+      { code: "3", name: "合成業種3", ratio: "75.00", held: true },
+      { code: "12", name: "合成業種12", ratio: "25.00", held: true },
+      { code: null, name: null, ratio: "0.00", held: true },
+      { code: "2", name: "合成業種2", ratio: "0.00", held: false },
+      { code: "10", name: "合成業種10", ratio: "0.00", held: false },
+    ],
+  });
+});
+
+test.each(axes)("%s omits unclassified when nothing unclassified is held", (axis) => {
+  const result = aggregateHoldings(
+    [row("1001", "1")],
+    new Map([
+      ["1001", entry("1")],
+      ["1002", entry(null)],
+    ]),
+  );
+  expect(result.kind).toBe("aggregation");
+  if (result.kind !== "aggregation") return;
+  expect(result[axis].sectors).toEqual([
+    { code: "1", name: "合成業種", ratio: "100.00", held: true },
+  ]);
+});
+
+test("each axis lists its own unheld sectors", () => {
+  const result = aggregateHoldings(
+    [row("1001", "1")],
+    new Map<string, StockMasterEntry>([
+      [
+        "1001",
+        {
+          sector17: { code: "1", name: "合成17の1" },
+          sector33: { code: "50", name: "合成33の50" },
+        },
+      ],
+      [
+        "1002",
+        {
+          sector17: { code: "1", name: "合成17の1" },
+          sector33: { code: "1050", name: "合成33の1050" },
+        },
+      ],
+      ["1003", { sector17: { code: "2", name: "合成17の2" }, sector33: null }],
+    ]),
+  );
+  expect(result.kind).toBe("aggregation");
+  if (result.kind !== "aggregation") return;
+  expect(result.sector17.sectors).toEqual([
+    { code: "1", name: "合成17の1", ratio: "100.00", held: true },
+    { code: "2", name: "合成17の2", ratio: "0.00", held: false },
+  ]);
+  expect(result.sector33.sectors).toEqual([
+    { code: "50", name: "合成33の50", ratio: "100.00", held: true },
+    { code: "1050", name: "合成33の1050", ratio: "0.00", held: false },
+  ]);
+});
+
+test("zero total stays not computable even when the master has sectors", () => {
+  const result = aggregateHoldings(
+    [row("1001", "0")],
+    new Map([
+      ["1001", entry("1")],
+      ["1002", entry("2")],
+    ]),
+  );
+  expect(result.kind).toBe("aggregation");
+  if (result.kind !== "aggregation") return;
+  for (const axis of axes) {
+    expect(result[axis]).toEqual({ status: "not_computable", sectors: [] });
+  }
+});
+
+test.each([
+  ["sector17", { code: "18", name: "合成業種" }],
+  ["sector33", { code: "12345", name: "合成業種" }],
+  ["sector33", { code: "1" }],
+] as const)("an invalid %s in an entry no row uses rejects the master", (axis, sector) => {
+  const valid = { code: "1", name: "合成業種" };
+  const master = new Map<string, StockMasterEntry>([
+    ["1001", { sector17: valid, sector33: valid }],
+    ["1002", { sector17: valid, sector33: valid, [axis]: sector } as never],
+  ]);
+  expect(aggregateHoldings([row("1001", "1")], master)).toEqual({
+    kind: "rejected",
+    reason: "invalid_stock_master",
+  });
+});
 
 test.each([
   { rows: [], lower: "0", upper: "0" },
@@ -280,8 +397,14 @@ test("smallest nonzero products retain eight decimal places", () => {
     kind: "aggregation",
     totalAssetValue: "0.00000001",
     annualDividend: { lower: "0.00000001", upper: "0.00000001" },
-    sector17: { status: "computed", sectors: [{ code: null, name: null, ratio: "100.00" }] },
-    sector33: { status: "computed", sectors: [{ code: null, name: null, ratio: "100.00" }] },
+    sector17: {
+      status: "computed",
+      sectors: [{ code: null, name: null, ratio: "100.00", held: true }],
+    },
+    sector33: {
+      status: "computed",
+      sectors: [{ code: null, name: null, ratio: "100.00", held: true }],
+    },
   });
 });
 
@@ -293,8 +416,14 @@ test("10,000 maximum-sized rows keep every sum digit as literal decimal strings"
     kind: "aggregation",
     totalAssetValue: "999999999999980000000000.0001",
     annualDividend: { lower: "99999999989999000000.0001", upper: "99999999989999000000.0001" },
-    sector17: { status: "computed", sectors: [{ code: "1", name: "合成業種", ratio: "100.00" }] },
-    sector33: { status: "computed", sectors: [{ code: "1", name: "合成業種", ratio: "100.00" }] },
+    sector17: {
+      status: "computed",
+      sectors: [{ code: "1", name: "合成業種", ratio: "100.00", held: true }],
+    },
+    sector33: {
+      status: "computed",
+      sectors: [{ code: "1", name: "合成業種", ratio: "100.00", held: true }],
+    },
   });
 });
 
@@ -442,11 +571,11 @@ test("sector17 accepts code 17 and sector33 accepts code 18", () => {
     annualDividend: { lower: "0", upper: "0" },
     sector17: {
       status: "computed",
-      sectors: [{ code: "17", name: "合成17業種", ratio: "100.00" }],
+      sectors: [{ code: "17", name: "合成17業種", ratio: "100.00", held: true }],
     },
     sector33: {
       status: "computed",
-      sectors: [{ code: "18", name: "合成33業種", ratio: "100.00" }],
+      sectors: [{ code: "18", name: "合成33業種", ratio: "100.00", held: true }],
     },
   });
 });
