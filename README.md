@@ -17,6 +17,8 @@
 
 `node_modules` はコンテナ専用の volume に置くので、手元の `node_modules` とは混ざらない。Next.js の開発サーバーの port 3000 は手元へ転送し、Next.js の匿名テレメトリーは止めてある（`NEXT_TELEMETRY_DISABLED=1`）。Node の版を上げるときは、`.node-version` とイメージのタグ・digest を一緒に直す。
 
+Dependabot（月 1 回）が見るのは npm の依存と GitHub Actions だけ。Node（`.node-version` と Dev Container のイメージ）と pnpm（ルートの `package.json` の `packageManager`）は Dependabot が上げないので、Dependabot の PR を見るときに新しい版が出ていないかを確かめ、上げるときは Issue を立てて手で直す。Next.js のメジャー更新も Dependabot からは出ない（[ADR 0004](docs/decisions/0004-vercel-nextjs-server-side.md)）。
+
 ### ローカルで API を動かして確かめる
 
 画面はまだ無いので、確かめられるのは検査 API（`POST /api/inspect`）だけ。銘柄マスターは合成の 2 銘柄（`9A9A`、`9C9C`）で動く。
