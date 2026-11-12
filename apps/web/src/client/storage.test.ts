@@ -2,6 +2,7 @@ import { expect, test } from "vitest";
 import { parseAggregation } from "./api-response";
 import {
   clearResults,
+  deferredStorage,
   loadLatestResult,
   MAX_STORED_RESULTS,
   type ResultStorage,
@@ -147,4 +148,22 @@ test("消すと、保存したものがすべて無くなる", () => {
   expect(clearResults(storage)).toBe(true);
   expect(storage.text()).toBeNull();
   expect(loadLatestResult(storage)).toBeNull();
+});
+
+test("a storage that cannot even be obtained is handled as a storage failure", () => {
+  const denied = deferredStorage(() => {
+    throw new Error("denied");
+  });
+  expect(loadLatestResult(denied)).toBeNull();
+  expect(saveResult(denied, stored())).toBe(false);
+  expect(clearResults(denied)).toBe(false);
+});
+
+test("a deferred storage passes calls through to the storage it obtains", () => {
+  const storage = memoryStorage();
+  const deferred = deferredStorage(() => storage);
+  expect(saveResult(deferred, stored())).toBe(true);
+  expect(loadLatestResult(deferred)).toEqual(stored());
+  expect(clearResults(deferred)).toBe(true);
+  expect(storage.text()).toBeNull();
 });

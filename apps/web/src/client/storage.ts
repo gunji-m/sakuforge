@@ -22,6 +22,19 @@ export const MAX_STORED_RESULTS = 200;
 /** The part of Web Storage this module uses, so tests can pass a fake. */
 export type ResultStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
+/**
+ * Wraps a storage that may throw when it is obtained (for example `window.localStorage`
+ * when the browser denies storage access), so that the failure happens inside the calls
+ * below and is handled like any other storage failure.
+ */
+export function deferredStorage(get: () => ResultStorage): ResultStorage {
+  return {
+    getItem: (key) => get().getItem(key),
+    setItem: (key, value) => get().setItem(key, value),
+    removeItem: (key) => get().removeItem(key),
+  };
+}
+
 function isCount(value: unknown): value is number {
   return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 }
