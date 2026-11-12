@@ -101,13 +101,23 @@ function Bars({
 }) {
   const rows = barRows(composition);
   const firstUnheld = rows.findIndex((row) => !row.held);
+  const [open, setOpen] = useState(false);
   return (
-    <ul className={twoColumns ? "bars bars-two" : "bars"}>
+    <ul className={`bars${twoColumns ? " bars-two" : ""}${open ? " bars-open" : ""}`}>
       {rows.map(({ key, label, held, percent, width }, index) => (
         <Fragment key={key}>
           {!held && index === firstUnheld && (
-            // Shown on narrow screens only, where the rows below collapse into a list of names.
-            <li className="bar-unheld-head">保有の無い業種（{rows.length - firstUnheld} 件）</li>
+            // Shown on narrow screens only, where the rows below are folded into a list of names.
+            <li className="bar-unheld-head">
+              <button
+                type="button"
+                className="bar-unheld-toggle"
+                aria-expanded={open}
+                onClick={() => setOpen(!open)}
+              >
+                保有の無い業種（{rows.length - firstUnheld} 件）
+              </button>
+            </li>
           )}
           <li className={held ? "bar-row" : "bar-row bar-row-unheld"}>
             <span className="bar-label">{label}</span>

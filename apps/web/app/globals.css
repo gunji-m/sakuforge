@@ -457,11 +457,40 @@ button,
     display: block;
     width: 100%;
     margin-top: 12px;
-    padding: 3px 0;
+  }
+
+  .bar-unheld-toggle {
+    width: 100%;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    border-top: 1px solid var(--rule);
+    background: none;
     color: var(--text-sub);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .bar-unheld-toggle::after {
+    content: "＋";
+    float: right;
+  }
+
+  .bar-unheld-toggle[aria-expanded="true"]::after {
+    content: "－";
+  }
+
+  .bar-unheld-toggle:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
   }
 
   .bar-row-unheld {
+    display: none;
+  }
+
+  .bars-open .bar-row-unheld {
     display: block;
     width: auto;
     color: var(--text-sub);
