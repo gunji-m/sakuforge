@@ -116,6 +116,18 @@ export function saveResult(storage: ResultStorage, result: StoredResult): boolea
   }
 }
 
+/**
+ * Tells whether anything is kept under the storage key, including text this version
+ * cannot show (unreadable text, unknown versions). Such data can still be cleared.
+ */
+export function hasStoredData(storage: ResultStorage): boolean {
+  try {
+    return storage.getItem(STORAGE_KEY) !== null;
+  } catch {
+    return false;
+  }
+}
+
 /** Removes every stored result. Returns false when the browser refuses. */
 export function clearResults(storage: ResultStorage): boolean {
   try {

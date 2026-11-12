@@ -446,3 +446,13 @@ button,
     column-count: 1;
   }
 }
+
+.leftover {
+  margin-top: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--text-sub);
+}
