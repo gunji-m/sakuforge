@@ -9,6 +9,10 @@ updates:
       - dependency-name: next
         update-types:
           - version-update:semver-major
+      # Node の型定義は、実行する Node のメジャー（.node-version、engines）と一緒に上げる。
+      - dependency-name: "@types/node"
+        update-types:
+          - version-update:semver-major
     groups:
       # 版がずれると動かないので、同じ PR で上げる。
       react:
