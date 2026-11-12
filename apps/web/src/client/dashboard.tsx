@@ -12,6 +12,7 @@ import {
   type ShownResult,
   toStoredResult,
 } from "./screen-state";
+import { SectorCharts } from "./sector-charts";
 import { clearResults, loadLatestResult, saveResult } from "./storage";
 import { submitCsv } from "./submit";
 
@@ -229,7 +230,12 @@ export function Dashboard() {
             {chooser}
           </section>
         )}
-        {result !== null && <Figures result={result} />}
+        {result !== null && (
+          <>
+            <Figures result={result} />
+            <SectorCharts aggregation={result.aggregation} />
+          </>
+        )}
       </main>
       <footer className="footer">
         {result !== null && <p>{MESSAGES.storageNote}</p>}
