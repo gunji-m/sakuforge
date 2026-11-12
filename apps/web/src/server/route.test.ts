@@ -1,6 +1,7 @@
 import * as core from "@sakuforge/core";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { POST } from "../../app/api/inspect/route";
+import * as currentStockMaster from "./current-stock-master";
 import { ERRORS } from "./errors";
 
 const header =
@@ -213,4 +214,25 @@ test("核の例外を再送出せず固定の500にする", async () => {
     throw new Error("合成例外の秘密文字列");
   });
   await expectError(await POST(request()), "internal_error");
+});
+
+test("検証に失敗した銘柄マスターでは、本文を読まず核も呼ばず固定の500にする", async () => {
+  vi.spyOn(currentStockMaster, "loadCurrentStockMaster").mockReturnValueOnce({
+    kind: "rejected",
+    reason: "invalid_sector",
+  });
+  const inspect = vi.spyOn(core, "inspectAndAggregateHoldingsCsv");
+  const pull = vi.fn();
+  const body = new ReadableStream<Uint8Array>({ pull }, { highWaterMark: 0 });
+  await expectError(await POST(request(body)), "internal_error");
+  expect(pull).not.toHaveBeenCalled();
+  expect(inspect).not.toHaveBeenCalled();
+});
+
+test("核へ渡す銘柄マスターは、検証を通ったものだけにする", async () => {
+  const inspect = vi.spyOn(core, "inspectAndAggregateHoldingsCsv");
+  await POST(request());
+  const stockMaster = inspect.mock.calls[0]?.[1];
+  expect(stockMaster).toBeInstanceOf(Map);
+  expect([...(stockMaster ?? new Map()).keys()]).toEqual(["9A9A", "9C9C"]);
 });
