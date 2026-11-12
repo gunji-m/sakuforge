@@ -79,6 +79,68 @@ test.each([
     "所見の数と returnedCount の食い違い",
     aggregated({ inspection: inspection({ returnedCount: 1 }) }),
   ],
+  [
+    "error と warning の合計が総数と合わない",
+    aggregated({ inspection: inspection({ warningCount: 1 }) }),
+  ],
+  [
+    "検査OKなのに error の所見がある",
+    aggregated({
+      inspection: inspection({ findings: [failedFinding], totalCount: 1, returnedCount: 1 }),
+    }),
+  ],
+  [
+    "返した error の数が errorCount より多い",
+    inspectionFailed({
+      inspection: inspection({
+        valid: false,
+        errorCount: 1,
+        warningCount: 1,
+        totalCount: 2,
+        returnedCount: 2,
+        findings: [failedFinding, { ...failedFinding, row: 3 }],
+      }),
+    }),
+  ],
+  [
+    "省略が無いのに、返した error の数が errorCount より少ない",
+    inspectionFailed({
+      inspection: inspection({
+        valid: false,
+        errorCount: 1,
+        totalCount: 1,
+        returnedCount: 1,
+        findings: [
+          { code: "stock_code_unknown", severity: "warning", message: "合成の注意の文言" },
+        ],
+      }),
+    }),
+  ],
+  [
+    "省略があるのに truncated が false",
+    inspectionFailed({
+      inspection: inspection({
+        valid: false,
+        errorCount: 2,
+        totalCount: 2,
+        returnedCount: 1,
+        findings: [failedFinding],
+      }),
+    }),
+  ],
+  [
+    "省略が無いのに truncated が true",
+    inspectionFailed({
+      inspection: inspection({
+        valid: false,
+        errorCount: 1,
+        totalCount: 1,
+        returnedCount: 1,
+        truncated: true,
+        findings: [failedFinding],
+      }),
+    }),
+  ],
   ["件数が負", aggregated({ inspection: inspection({ rowsScanned: -1 }) })],
   ["件数が文字列", aggregated({ inspection: inspection({ rowsScanned: "3" }) })],
   [
@@ -179,4 +241,21 @@ test.each([
   { schemaVersion: 1, error: "csv_too_large" },
 ])("形の合わない誤りの応答 %j を受け付けない", (body) => {
   expect(parseApiError(body)).toBeNull();
+});
+
+test("省略のある検査NGは、返した分が総数より少なくても受け付ける", () => {
+  const parsed = parseInspectResponse(
+    inspectionFailed({
+      inspection: inspection({
+        valid: false,
+        errorCount: 249,
+        warningCount: 1,
+        totalCount: 250,
+        returnedCount: 1,
+        truncated: true,
+        findings: [failedFinding],
+      }),
+    }),
+  );
+  expect(parsed).toMatchObject({ result: "inspection_failed", inspection: { truncated: true } });
 });

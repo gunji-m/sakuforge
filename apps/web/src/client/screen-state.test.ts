@@ -101,6 +101,30 @@ test("省略された所見の数を伝える", () => {
   expect(state.notice).toMatchObject({ kind: "inspection_failed", omitted: 249 });
 });
 
+test("検査NGの所見に銘柄マスター由来のものがあれば、出典と基準日を通知に持たせる", () => {
+  const warning = { code: "stock_code_unknown", severity: "warning", message: "合成の注意の文言" };
+  const body = inspectionFailed();
+  const withWarning = finished(INITIAL_STATE, {
+    ...body,
+    inspection: {
+      ...(body.inspection as object),
+      findings: [(body.inspection as { findings: unknown[] }).findings[0], warning],
+      warningCount: 1,
+      totalCount: 2,
+      returnedCount: 2,
+      stockCodeMatch: { status: "checked", unknownCodes: ["9D9D"], unknownCount: 1 },
+    },
+  });
+  expect(withWarning.notice).toMatchObject({
+    kind: "inspection_failed",
+    stockMaster: { source: "合成データ", asOf: "2026-10-31" },
+  });
+  expect(finished(INITIAL_STATE, body).notice).toMatchObject({
+    kind: "inspection_failed",
+    stockMaster: null,
+  });
+});
+
 test.each([
   ["too_large", MESSAGES.tooLarge],
   ["timeout", MESSAGES.timeout],

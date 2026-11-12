@@ -14,6 +14,8 @@ export type Notice =
       readonly kind: "inspection_failed";
       readonly findings: readonly Finding[];
       readonly omitted: number;
+      /** Set when a finding comes from the stock master, which must carry its source and date. */
+      readonly stockMaster: StockMasterAttribution | null;
     }
   | { readonly kind: "unknown_codes"; readonly text: string; readonly codes: readonly string[] };
 
@@ -41,10 +43,12 @@ const FAILURE_TEXT = {
 function noticeForResponse(response: InspectResponse): Notice | null {
   const { inspection } = response;
   if (response.result === "inspection_failed") {
+    const usesStockMaster = inspection.findings.some(({ code }) => code === "stock_code_unknown");
     return {
       kind: "inspection_failed",
       findings: inspection.findings,
       omitted: inspection.totalCount - inspection.returnedCount,
+      stockMaster: usesStockMaster ? response.stockMaster : null,
     };
   }
   const { stockCodeMatch } = inspection;
