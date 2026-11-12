@@ -12,7 +12,11 @@ import {
   type ShownResult,
   toStoredResult,
 } from "./screen-state";
-import { clearResults, loadLatestResult, saveResult } from "./storage";
+import { clearResults, deferredStorage, loadLatestResult, saveResult } from "./storage";
+
+// Some browser settings make `window.localStorage` itself throw, so it is obtained per call.
+const browserStorage = deferredStorage(() => window.localStorage);
+
 import { submitCsv } from "./submit";
 
 function formatAsOf(asOf: string): string {
@@ -133,7 +137,7 @@ export function Dashboard() {
 
   // Stored results exist only in the browser, so they are read after the first render.
   useEffect(() => {
-    dispatch({ type: "restored", stored: loadLatestResult(window.localStorage) });
+    dispatch({ type: "restored", stored: loadLatestResult(browserStorage) });
   }, []);
 
   async function onFileChange(event: ChangeEvent<HTMLInputElement>) {
@@ -154,7 +158,7 @@ export function Dashboard() {
       const outcome = await submitCsv(file, (url, init) => fetch(url, init));
       if (outcome.kind === "response" && outcome.response.result === "aggregated") {
         const entry = toStoredResult(outcome.response, new Date().toISOString());
-        const ok = saveResult(window.localStorage, entry);
+        const ok = saveResult(browserStorage, entry);
         dispatch({ type: "finished", outcome, saved: { entry, ok } });
       } else {
         dispatch({ type: "finished", outcome });
@@ -166,7 +170,7 @@ export function Dashboard() {
 
   function onClear() {
     if (!window.confirm(MESSAGES.clearConfirm)) return;
-    dispatch({ type: "cleared", ok: clearResults(window.localStorage) });
+    dispatch({ type: "cleared", ok: clearResults(browserStorage) });
   }
 
   const { loaded, result, sending, notices } = state;
