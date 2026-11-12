@@ -161,16 +161,30 @@ function parseInspection(value: unknown): Inspection | null {
     !isCount(totalCount) ||
     !isCount(returnedCount) ||
     typeof truncated !== "boolean" ||
+    // The counts must agree with each other (docs/domain-rules.md 6).
     returnedCount !== findings.length ||
-    valid !== (errorCount === 0)
+    valid !== (errorCount === 0) ||
+    errorCount + warningCount !== totalCount ||
+    truncated !== returnedCount < totalCount
   ) {
     return null;
   }
   const parsedFindings: Finding[] = [];
+  let returnedErrors = 0;
   for (const finding of findings) {
     const parsed = parseFinding(finding);
     if (parsed === null) return null;
+    if (parsed.severity === "error") returnedErrors++;
     parsedFindings.push(parsed);
+  }
+  // Returned findings are a prefix of all findings, so neither severity can exceed its total.
+  const returnedWarnings = parsedFindings.length - returnedErrors;
+  if (
+    returnedErrors > errorCount ||
+    returnedWarnings > warningCount ||
+    (!truncated && returnedErrors !== errorCount)
+  ) {
+    return null;
   }
   const stockCodeMatch = parseStockCodeMatch(value.stockCodeMatch);
   if (stockCodeMatch === null) return null;

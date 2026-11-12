@@ -73,6 +73,11 @@ function NoticeBand({
             {notice.omitted > 0 && (
               <p className="notice-rows">ほかに {notice.omitted} 件あります。</p>
             )}
+            {notice.stockMaster !== null && (
+              <p className="notice-rows">
+                出典：{notice.stockMaster.source}（{formatAsOf(notice.stockMaster.asOf)}）
+              </p>
+            )}
           </>
         )}
         {notice.kind === "unknown_codes" && (

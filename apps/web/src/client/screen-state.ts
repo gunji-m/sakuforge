@@ -17,6 +17,8 @@ export type Notice =
       readonly kind: "inspection_failed";
       readonly findings: readonly Finding[];
       readonly omitted: number;
+      /** Set when a finding comes from the stock master, which must carry its source and date. */
+      readonly stockMaster: StockMasterAttribution | null;
     }
   | { readonly kind: "unknown_codes"; readonly text: string; readonly codes: readonly string[] };
 
@@ -120,10 +122,12 @@ export function reduce(state: State, action: Action): State {
       const { response } = outcome;
       if (response.result === "inspection_failed") {
         const { findings, totalCount, returnedCount } = response.inspection;
+        const usesStockMaster = findings.some(({ code }) => code === "stock_code_unknown");
         const notice: Notice = {
           kind: "inspection_failed",
           findings,
           omitted: totalCount - returnedCount,
+          stockMaster: usesStockMaster ? response.stockMaster : null,
         };
         return { ...state, sending: false, notices: [notice] };
       }
