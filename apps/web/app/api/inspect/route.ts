@@ -1,7 +1,7 @@
 import { DEFAULT_INSPECTION_LIMITS, inspectAndAggregateHoldingsCsv } from "@sakuforge/core";
+import { loadCurrentStockMaster } from "../../../src/server/current-stock-master";
 import { errorResponse } from "../../../src/server/errors";
 import { readBody } from "../../../src/server/read-body";
-import { syntheticStockMaster } from "../../../src/server/synthetic-stock-master";
 
 export async function POST(request: Request): Promise<Response> {
   try {
@@ -13,6 +13,9 @@ export async function POST(request: Request): Promise<Response> {
       return errorResponse("unsupported_media_type");
     }
 
+    // Never hand the core a stock master that failed validation, and never read the body for it.
+    const loaded = loadCurrentStockMaster(new Date());
+    if (loaded.kind !== "loaded") return errorResponse("internal_error");
     let body: Awaited<ReturnType<typeof readBody>>;
     try {
       body = await readBody(request.body, DEFAULT_INSPECTION_LIMITS.maxBytes);
@@ -21,7 +24,7 @@ export async function POST(request: Request): Promise<Response> {
     }
     if (body.kind === "too_large") return errorResponse("csv_too_large");
 
-    const result = inspectAndAggregateHoldingsCsv(body.bytes, syntheticStockMaster);
+    const result = inspectAndAggregateHoldingsCsv(body.bytes, loaded.stockMaster);
     switch (result.kind) {
       case "aggregated":
         return Response.json(

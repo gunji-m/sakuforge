@@ -35,3 +35,4 @@ export {
   HOLDINGS_COLUMNS,
   HOLDINGS_PROFILE,
 } from "./inspection/types";
+export { checkStockCode } from "./inspection/values";
