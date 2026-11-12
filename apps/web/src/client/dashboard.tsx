@@ -1,16 +1,33 @@
 "use client";
 
-import { type ChangeEvent, useId, useReducer, useRef } from "react";
+import { type ChangeEvent, useEffect, useId, useReducer, useRef } from "react";
 import type { Finding } from "./api-response";
 import { formatYen } from "./format";
 import { MESSAGES } from "./messages";
 import { precheckFile } from "./precheck";
-import { INITIAL_STATE, type Notice, reduce, type ShownResult } from "./screen-state";
+import {
+  INITIAL_STATE,
+  type Notice,
+  reduce,
+  type ShownResult,
+  toStoredResult,
+} from "./screen-state";
+import { clearResults, deferredStorage, loadLatestResult, saveResult } from "./storage";
+
+// Some browser settings make `window.localStorage` itself throw, so it is obtained per call.
+const browserStorage = deferredStorage(() => window.localStorage);
+
 import { submitCsv } from "./submit";
 
 function formatAsOf(asOf: string): string {
   const [year = "", month = ""] = asOf.split("-");
   return `${year}年${Number(month)}月末時点`;
+}
+
+function formatSavedAt(savedAt: string): string {
+  return new Intl.DateTimeFormat("ja-JP", { dateStyle: "long", timeStyle: "short" }).format(
+    new Date(savedAt),
+  );
 }
 
 function Yen({ amount }: { readonly amount: string }) {
@@ -118,6 +135,11 @@ export function Dashboard() {
   const inputId = useId();
   const sendingRef = useRef(false);
 
+  // Stored results exist only in the browser, so they are read after the first render.
+  useEffect(() => {
+    dispatch({ type: "restored", stored: loadLatestResult(browserStorage) });
+  }, []);
+
   async function onFileChange(event: ChangeEvent<HTMLInputElement>) {
     const input = event.currentTarget;
     const file = input.files?.[0];
@@ -127,20 +149,31 @@ export function Dashboard() {
     const check = precheckFile(file.name, file.size);
     if (check !== "ok") {
       const text = check === "file_name" ? MESSAGES.fileName : MESSAGES.tooLarge;
-      dispatch({ type: "stopped", notice: { kind: "message", text } });
+      dispatch({ type: "stopped", text });
       return;
     }
     sendingRef.current = true;
     dispatch({ type: "started" });
     try {
       const outcome = await submitCsv(file, (url, init) => fetch(url, init));
-      dispatch({ type: "finished", outcome });
+      if (outcome.kind === "response" && outcome.response.result === "aggregated") {
+        const entry = toStoredResult(outcome.response, new Date().toISOString());
+        const ok = saveResult(browserStorage, entry);
+        dispatch({ type: "finished", outcome, saved: { entry, ok } });
+      } else {
+        dispatch({ type: "finished", outcome });
+      }
     } finally {
       sendingRef.current = false;
     }
   }
 
-  const { result, sending, notice } = state;
+  function onClear() {
+    if (!window.confirm(MESSAGES.clearConfirm)) return;
+    dispatch({ type: "cleared", ok: clearResults(browserStorage) });
+  }
+
+  const { loaded, result, sending, notices } = state;
   const chooser = (
     <>
       <input
@@ -164,11 +197,19 @@ export function Dashboard() {
           <h1 className="brand">sakuforge</h1>
           {result !== null && (
             <span className="meta">
-              出典：{result.stockMaster.source}（{formatAsOf(result.stockMaster.asOf)}）
+              {formatSavedAt(result.savedAt)} 取り込み ・ 出典：{result.stockMaster.source}（
+              {formatAsOf(result.stockMaster.asOf)}）
             </span>
           )}
         </div>
-        {result !== null && <div className="actions">{chooser}</div>}
+        {result !== null && (
+          <div className="actions">
+            <button type="button" className="button" disabled={sending} onClick={onClear}>
+              保存した結果を消す
+            </button>
+            {chooser}
+          </div>
+        )}
       </header>
       <main className="main">
         {sending && (
@@ -176,20 +217,26 @@ export function Dashboard() {
             CSVを検査しています…
           </p>
         )}
-        {notice !== null && (
-          <NoticeBand notice={notice} onClose={() => dispatch({ type: "notice_closed" })} />
-        )}
-        {result === null ? (
+        {notices.map((notice, index) => (
+          <NoticeBand
+            // biome-ignore lint/suspicious/noArrayIndexKey: notices have no identity beyond their position
+            key={index}
+            notice={notice}
+            onClose={() => dispatch({ type: "notice_closed", index })}
+          />
+        ))}
+        {loaded && result === null && (
           <section className="card empty">
             <h2>保有資産のCSVを選んでください</h2>
             <p>{MESSAGES.emptyGuide}</p>
+            <p className="figure-note">{MESSAGES.storageNote}</p>
             {chooser}
           </section>
-        ) : (
-          <Figures result={result} />
         )}
+        {result !== null && <Figures result={result} />}
       </main>
       <footer className="footer">
+        {result !== null && <p>{MESSAGES.storageNote}</p>}
         <p>SakuForge は投資助言を提供しません。計算結果の正確性・完全性は保証しません。</p>
       </footer>
     </div>

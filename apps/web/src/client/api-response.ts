@@ -228,7 +228,7 @@ function parseComposition(value: unknown): SectorComposition | null {
   return { status, sectors: parsed };
 }
 
-function parseAggregation(value: unknown): Aggregation | null {
+export function parseAggregation(value: unknown): Aggregation | null {
   if (!isRecord(value) || !isRecord(value.annualDividend)) return null;
   const { totalAssetValue, annualDividend } = value;
   const { lower, upper } = annualDividend;
@@ -246,7 +246,7 @@ function parseAggregation(value: unknown): Aggregation | null {
   return { totalAssetValue, annualDividend: { lower, upper }, sector17, sector33 };
 }
 
-function parseStockMaster(value: unknown): StockMasterAttribution | null {
+export function parseStockMaster(value: unknown): StockMasterAttribution | null {
   if (!isRecord(value)) return null;
   const { source, asOf } = value;
   if (!isText(source) || typeof asOf !== "string" || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(asOf)) {

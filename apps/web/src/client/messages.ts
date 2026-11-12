@@ -11,5 +11,6 @@ export const MESSAGES = {
   invalidResponse: "処理できませんでした。ページを再読み込みして、もう一度お試しください。",
   storageFailed:
     "結果をこのブラウザに保存できませんでした。表示している結果は、ページを閉じると消えます。",
+  clearFailed: "保存した結果を消せませんでした。ブラウザの設定を確かめてください。",
   clearConfirm: "このブラウザに保存した結果をすべて消します。元に戻せません。",
 } as const;
