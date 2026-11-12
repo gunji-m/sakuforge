@@ -4,8 +4,33 @@ updates:
     directory: "/"
     schedule:
       interval: monthly
+    ignore:
+      # Next.js のメジャーは固定する（ADR 0004）。上げるときは Issue を立てて行う。
+      - dependency-name: next
+        update-types:
+          - version-update:semver-major
+    groups:
+      # 版がずれると動かないので、同じ PR で上げる。
+      react:
+        patterns:
+          - react
+          - react-dom
+          - "@types/react"
+      npm-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
 
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
       interval: monthly
+    groups:
+      actions-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
