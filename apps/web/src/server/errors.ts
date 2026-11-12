@@ -1,3 +1,5 @@
+import { RESPONSE_SCHEMA_VERSION } from "./response";
+
 export const ERRORS = {
   csv_too_large: {
     status: 413,
@@ -28,7 +30,7 @@ export const ERRORS = {
 export function errorResponse(code: keyof typeof ERRORS): Response {
   const { status, message } = ERRORS[code];
   return Response.json(
-    { error: { code, message } },
+    { schemaVersion: RESPONSE_SCHEMA_VERSION, error: { code, message } },
     { status, headers: { "Cache-Control": "no-store" } },
   );
 }
