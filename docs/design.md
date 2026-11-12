@@ -322,6 +322,24 @@ stateDiagram-v2
 - Vercel の WAF・Pause Project の使える範囲と、ログ・環境変数に残るものは、配備（#44）のときに確かめる
 - CSV Formula Injection は 6 に含めない。セルの値を出力する機能を足すときに扱う（[入力を信用しない原則](input-trust-principles.md)の5節）
 
+### 7.1 応答ヘッダー
+
+6 の安全網と、検索エンジンに載せない公開（[ADR 0006](decisions/0006-unlisted-public-release.md)）のために、次のヘッダーを付ける。
+
+| 対象 | ヘッダー | 値 |
+| --- | --- | --- |
+| すべての応答 | `X-Content-Type-Options` | `nosniff` |
+| すべての応答 | `Referrer-Policy` | `no-referrer` |
+| すべての応答 | `X-Frame-Options` | `DENY` |
+| すべての応答 | `X-Robots-Tag` | `noindex, nofollow` |
+| ページ | `Content-Security-Policy` | 応答ごとの nonce を付けた script と style、同じ出所の読み込みと通信だけを許す。inline のコードと `eval` は許さない |
+| 検査 API | `Content-Security-Policy` | `default-src 'none'; frame-ancestors 'none'` |
+
+- ページには `robots` の meta（`noindex, nofollow`）も入れる
+- nonce を応答ごとに変えるため、ページは要求のたびに描画する（静的に生成しない）
+- 開発のときだけ、React が使う `eval` と、編集中に差し込まれる style を許す
+- 配備した先でヘッダーが付いていることは、配備（#44）のときに確かめる
+
 ## 8. 要求・応答・保存する JSON の形
 
 検査 API の要求と応答、ブラウザに保存する JSON の形を決めます（#21、2026-11-11）。核の戻り値はそのまま
