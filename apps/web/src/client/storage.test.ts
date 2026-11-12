@@ -3,6 +3,7 @@ import { parseAggregation } from "./api-response";
 import {
   clearResults,
   deferredStorage,
+  hasStoredData,
   loadLatestResult,
   MAX_STORED_RESULTS,
   type ResultStorage,
@@ -166,4 +167,20 @@ test("a deferred storage passes calls through to the storage it obtains", () => 
   expect(loadLatestResult(deferred)).toEqual(stored());
   expect(clearResults(deferred)).toBe(true);
   expect(storage.text()).toBeNull();
+});
+
+test("stored data that cannot be shown is still reported, so that it can be cleared", () => {
+  expect(hasStoredData(memoryStorage())).toBe(false);
+  const broken = memoryStorage("{not json");
+  expect(loadLatestResult(broken)).toBeNull();
+  expect(hasStoredData(broken)).toBe(true);
+  expect(clearResults(broken)).toBe(true);
+  expect(hasStoredData(broken)).toBe(false);
+  expect(
+    hasStoredData(
+      deferredStorage(() => {
+        throw new Error("denied");
+      }),
+    ),
+  ).toBe(false);
 });

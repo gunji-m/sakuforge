@@ -1,6 +1,6 @@
 "use client";
 
-import { type ChangeEvent, useEffect, useId, useReducer, useRef } from "react";
+import { type ChangeEvent, useEffect, useId, useReducer, useRef, useState } from "react";
 import type { Finding } from "./api-response";
 import { formatYen } from "./format";
 import { MESSAGES } from "./messages";
@@ -12,7 +12,14 @@ import {
   type ShownResult,
   toStoredResult,
 } from "./screen-state";
-import { clearResults, deferredStorage, loadLatestResult, saveResult } from "./storage";
+import { SectorCharts } from "./sector-charts";
+import {
+  clearResults,
+  deferredStorage,
+  hasStoredData,
+  loadLatestResult,
+  saveResult,
+} from "./storage";
 
 // Some browser settings make `window.localStorage` itself throw, so it is obtained per call.
 const browserStorage = deferredStorage(() => window.localStorage);
@@ -134,10 +141,13 @@ export function Dashboard() {
   const [state, dispatch] = useReducer(reduce, INITIAL_STATE);
   const inputId = useId();
   const sendingRef = useRef(false);
+  // Whether the browser keeps anything, including data this version cannot show.
+  const [stored, setStored] = useState(false);
 
   // Stored results exist only in the browser, so they are read after the first render.
   useEffect(() => {
     dispatch({ type: "restored", stored: loadLatestResult(browserStorage) });
+    setStored(hasStoredData(browserStorage));
   }, []);
 
   async function onFileChange(event: ChangeEvent<HTMLInputElement>) {
@@ -160,6 +170,7 @@ export function Dashboard() {
         const entry = toStoredResult(outcome.response, new Date().toISOString());
         const ok = saveResult(browserStorage, entry);
         dispatch({ type: "finished", outcome, saved: { entry, ok } });
+        setStored(hasStoredData(browserStorage));
       } else {
         dispatch({ type: "finished", outcome });
       }
@@ -171,6 +182,7 @@ export function Dashboard() {
   function onClear() {
     if (!window.confirm(MESSAGES.clearConfirm)) return;
     dispatch({ type: "cleared", ok: clearResults(browserStorage) });
+    setStored(hasStoredData(browserStorage));
   }
 
   const { loaded, result, sending, notices } = state;
@@ -231,9 +243,22 @@ export function Dashboard() {
             <p>{MESSAGES.emptyGuide}</p>
             <p className="figure-note">{MESSAGES.storageNote}</p>
             {chooser}
+            {stored && (
+              <p className="leftover">
+                {MESSAGES.leftover}
+                <button type="button" className="button" disabled={sending} onClick={onClear}>
+                  保存した結果を消す
+                </button>
+              </p>
+            )}
           </section>
         )}
-        {result !== null && <Figures result={result} />}
+        {result !== null && (
+          <>
+            <Figures result={result} />
+            <SectorCharts aggregation={result.aggregation} />
+          </>
+        )}
       </main>
       <footer className="footer">
         {result !== null && <p>{MESSAGES.storageNote}</p>}
