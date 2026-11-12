@@ -1,11 +1,14 @@
 import type { Aggregation, Finding, InspectResponse, StockMasterAttribution } from "./api-response";
 import { MESSAGES } from "./messages";
+import type { StoredResult } from "./storage";
 import type { SubmitOutcome } from "./submit";
 
 export interface ShownResult {
   readonly aggregation: Aggregation;
   readonly stockMaster: StockMasterAttribution;
   readonly rowsScanned: number;
+  /** When the browser imported it, ISO 8601 in UTC. */
+  readonly savedAt: string;
 }
 
 export type Notice =
@@ -18,18 +21,27 @@ export type Notice =
   | { readonly kind: "unknown_codes"; readonly text: string; readonly codes: readonly string[] };
 
 export interface State {
+  /** False until the stored results have been read, so the empty guide does not flash. */
+  readonly loaded: boolean;
   readonly result: ShownResult | null;
   readonly sending: boolean;
-  readonly notice: Notice | null;
+  readonly notices: readonly Notice[];
 }
 
 export type Action =
+  | { readonly type: "restored"; readonly stored: StoredResult | null }
   | { readonly type: "started" }
-  | { readonly type: "stopped"; readonly notice: Notice }
-  | { readonly type: "finished"; readonly outcome: SubmitOutcome }
-  | { readonly type: "notice_closed" };
+  | { readonly type: "stopped"; readonly text: string }
+  | {
+      readonly type: "finished";
+      readonly outcome: SubmitOutcome;
+      /** The entry written for an aggregated response, and whether the browser kept it. */
+      readonly saved?: { readonly entry: StoredResult; readonly ok: boolean };
+    }
+  | { readonly type: "cleared"; readonly ok: boolean }
+  | { readonly type: "notice_closed"; readonly index: number };
 
-export const INITIAL_STATE: State = { result: null, sending: false, notice: null };
+export const INITIAL_STATE: State = { loaded: false, result: null, sending: false, notices: [] };
 
 const FAILURE_TEXT = {
   too_large: MESSAGES.tooLarge,
@@ -38,17 +50,40 @@ const FAILURE_TEXT = {
   invalid: MESSAGES.invalidResponse,
 } as const;
 
-function noticeForResponse(response: InspectResponse): Notice | null {
-  const { inspection } = response;
-  if (response.result === "inspection_failed") {
-    return {
-      kind: "inspection_failed",
-      findings: inspection.findings,
-      omitted: inspection.totalCount - inspection.returnedCount,
-    };
-  }
-  const { stockCodeMatch } = inspection;
-  const warning = inspection.findings.find(({ code }) => code === "stock_code_unknown");
+function message(text: string): Notice {
+  return { kind: "message", text };
+}
+
+function shown(stored: StoredResult): ShownResult {
+  return {
+    aggregation: stored.aggregation,
+    stockMaster: stored.stockMaster,
+    rowsScanned: stored.summary.rowsScanned,
+    savedAt: stored.savedAt,
+  };
+}
+
+/** The entry to store for an aggregated response (docs/design.md 8.5). */
+export function toStoredResult(
+  response: Extract<InspectResponse, { result: "aggregated" }>,
+  savedAt: string,
+): StoredResult {
+  const { stockCodeMatch } = response.inspection;
+  return {
+    schemaVersion: 1,
+    savedAt,
+    aggregation: response.aggregation,
+    stockMaster: response.stockMaster,
+    summary: {
+      rowsScanned: response.inspection.rowsScanned,
+      unknownCount: stockCodeMatch.status === "checked" ? stockCodeMatch.unknownCount : 0,
+    },
+  };
+}
+
+function unknownCodesNotice(response: InspectResponse): Notice | null {
+  const { stockCodeMatch, findings } = response.inspection;
+  const warning = findings.find(({ code }) => code === "stock_code_unknown");
   if (stockCodeMatch.status !== "checked" || stockCodeMatch.unknownCount === 0 || !warning) {
     return null;
   }
@@ -58,40 +93,47 @@ function noticeForResponse(response: InspectResponse): Notice | null {
 /** docs/design.md 6.5: a failed import never replaces the result already on screen. */
 export function reduce(state: State, action: Action): State {
   switch (action.type) {
+    case "restored":
+      return {
+        ...state,
+        loaded: true,
+        result: action.stored === null ? null : shown(action.stored),
+      };
     case "started":
-      return { ...state, sending: true, notice: null };
+      return { ...state, sending: true, notices: [] };
     case "stopped":
-      return { ...state, sending: false, notice: action.notice };
+      return { ...state, sending: false, notices: [message(action.text)] };
     case "notice_closed":
-      return { ...state, notice: null };
+      return { ...state, notices: state.notices.filter((_, index) => index !== action.index) };
+    case "cleared":
+      return action.ok
+        ? { ...state, result: null, notices: [] }
+        : { ...state, notices: [message(MESSAGES.clearFailed)] };
     case "finished": {
-      const { outcome } = action;
+      const { outcome, saved } = action;
       if (outcome.kind === "failure") {
-        return {
-          ...state,
-          sending: false,
-          notice: { kind: "message", text: FAILURE_TEXT[outcome.reason] },
-        };
+        return { ...state, sending: false, notices: [message(FAILURE_TEXT[outcome.reason])] };
       }
       if (outcome.kind === "api_error") {
-        return {
-          ...state,
-          sending: false,
-          notice: { kind: "message", text: outcome.error.message },
-        };
+        return { ...state, sending: false, notices: [message(outcome.error.message)] };
       }
       const { response } = outcome;
-      const notice = noticeForResponse(response);
-      if (response.result === "inspection_failed") return { ...state, sending: false, notice };
-      return {
-        sending: false,
-        notice,
-        result: {
-          aggregation: response.aggregation,
-          stockMaster: response.stockMaster,
-          rowsScanned: response.inspection.rowsScanned,
-        },
-      };
+      if (response.result === "inspection_failed") {
+        const { findings, totalCount, returnedCount } = response.inspection;
+        const notice: Notice = {
+          kind: "inspection_failed",
+          findings,
+          omitted: totalCount - returnedCount,
+        };
+        return { ...state, sending: false, notices: [notice] };
+      }
+      // A complete result is shown even when the browser could not keep it.
+      if (saved === undefined) return { ...state, sending: false };
+      const notices: Notice[] = [];
+      const unknown = unknownCodesNotice(response);
+      if (unknown !== null) notices.push(unknown);
+      if (!saved.ok) notices.push(message(MESSAGES.storageFailed));
+      return { ...state, sending: false, notices, result: shown(saved.entry) };
     }
   }
 }
