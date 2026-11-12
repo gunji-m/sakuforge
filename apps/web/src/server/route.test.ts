@@ -93,8 +93,18 @@ test.each(["text/csv", " Text/CSV ; charset=utf-8", "APPLICATION/VND.MS-EXCEL"])
       aggregation: {
         totalAssetValue: "65088550.25",
         annualDividend: { lower: "279588.375", upper: "279588.375" },
-        sector17: { sectors: [{ ratio: "100.00" }] },
-        sector33: { sectors: [{ ratio: "100.00" }] },
+        sector17: {
+          sectors: [
+            { ratio: "100.00", held: true },
+            { ratio: "0.00", held: false },
+          ],
+        },
+        sector33: {
+          sectors: [
+            { ratio: "100.00", held: true },
+            { ratio: "0.00", held: false },
+          ],
+        },
       },
     });
   },
@@ -261,9 +271,9 @@ test("集計できた応答は、版・検査・集計・出典と基準日だ�
   expect(response.status).toBe(200);
   const body = await responseBody(response);
   const sectors = [
-    { code: "1", name: "合成業種1", ratio: "93.68" },
-    { code: "2", name: "合成業種2", ratio: "6.25" },
-    { code: null, name: null, ratio: "0.08" },
+    { code: "1", name: "合成業種1", ratio: "93.68", held: true },
+    { code: "2", name: "合成業種2", ratio: "6.25", held: true },
+    { code: null, name: null, ratio: "0.08", held: true },
   ];
   expect(body).toEqual({
     schemaVersion: 1,

@@ -46,7 +46,12 @@ function inspectionBody(inspection: HoldingsInspection) {
 function compositionBody(composition: SectorComposition) {
   return {
     status: composition.status,
-    sectors: composition.sectors.map(({ code, name, ratio }) => ({ code, name, ratio })),
+    sectors: composition.sectors.map(({ code, name, ratio, held }) => ({
+      code,
+      name,
+      ratio,
+      held,
+    })),
   };
 }
 
