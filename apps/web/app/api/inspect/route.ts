@@ -2,6 +2,7 @@ import { DEFAULT_INSPECTION_LIMITS, inspectAndAggregateHoldingsCsv } from "@saku
 import { loadCurrentStockMaster } from "../../../src/server/current-stock-master";
 import { errorResponse } from "../../../src/server/errors";
 import { readBody } from "../../../src/server/read-body";
+import { aggregatedResponse, inspectionFailedResponse } from "../../../src/server/response";
 
 export async function POST(request: Request): Promise<Response> {
   try {
@@ -27,15 +28,9 @@ export async function POST(request: Request): Promise<Response> {
     const result = inspectAndAggregateHoldingsCsv(body.bytes, loaded.stockMaster);
     switch (result.kind) {
       case "aggregated":
-        return Response.json(
-          { result: "aggregated", inspection: result.inspection, aggregation: result.aggregation },
-          { headers: { "Cache-Control": "no-store" } },
-        );
+        return aggregatedResponse(result.inspection, result.aggregation, loaded);
       case "inspection_failed":
-        return Response.json(
-          { result: "inspection_failed", inspection: result.inspection },
-          { headers: { "Cache-Control": "no-store" } },
-        );
+        return inspectionFailedResponse(result.inspection, loaded);
       case "rejected":
         switch (result.reason) {
           case "maxBytes":
