@@ -262,7 +262,7 @@ export function Dashboard() {
       </main>
       <footer className="footer">
         {result !== null && <p>{MESSAGES.storageNote}</p>}
-        <p>SakuForge は投資助言を提供しません。計算結果の正確性・完全性は保証しません。</p>
+        <p>{MESSAGES.disclaimer}</p>
       </footer>
     </div>
   );
