@@ -8,7 +8,7 @@ export default function GlobalError() {
   return (
     <html lang="ja">
       <body>
-        <title>sakuforge</title>
+        <title>SakuForge</title>
         <RenderFailed />
       </body>
     </html>
