@@ -3,7 +3,7 @@
 import { type ChangeEvent, useEffect, useId, useReducer, useRef, useState } from "react";
 import type { Finding } from "./api-response";
 import { formatYen } from "./format";
-import { MESSAGES } from "./messages";
+import { MESSAGES, omittedFindings } from "./messages";
 import { precheckFile } from "./precheck";
 import {
   INITIAL_STATE,
@@ -81,9 +81,7 @@ function NoticeBand({
           <>
             <p className="notice-title">{MESSAGES.inspectionFailed}</p>
             <FindingsList findings={notice.findings} />
-            {notice.omitted > 0 && (
-              <p className="notice-rows">ほかに {notice.omitted} 件あります。</p>
-            )}
+            {notice.omitted > 0 && <p className="notice-rows">{omittedFindings(notice.omitted)}</p>}
             {notice.stockMaster !== null && (
               <p className="notice-rows">
                 出典：{notice.stockMaster.source}（{formatAsOf(notice.stockMaster.asOf)}）
@@ -206,7 +204,7 @@ export function Dashboard() {
     <div className="page">
       <header className="header">
         <div className="header-title">
-          <h1 className="brand">sakuforge</h1>
+          <h1 className="brand">SakuForge</h1>
           {result !== null && (
             <span className="meta">
               {formatSavedAt(result.savedAt)} 取り込み ・ 出典：{result.stockMaster.source}（
@@ -226,7 +224,7 @@ export function Dashboard() {
       <main className="main">
         {sending && (
           <p className="sending" role="status">
-            CSVを検査しています…
+            {MESSAGES.sending}
           </p>
         )}
         {notices.map((notice, index) => (
@@ -239,7 +237,7 @@ export function Dashboard() {
         ))}
         {loaded && result === null && (
           <section className="card empty">
-            <h2>保有資産のCSVを選んでください</h2>
+            <h2>{MESSAGES.emptyHeading}</h2>
             <p>{MESSAGES.emptyGuide}</p>
             <p className="figure-note">{MESSAGES.storageNote}</p>
             {chooser}

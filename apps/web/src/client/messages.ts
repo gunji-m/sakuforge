@@ -1,5 +1,9 @@
 /** Fixed texts the screen owns (docs/design.md 6.5). API messages are shown as received. */
 export const MESSAGES = {
+  emptyHeading: "保有資産のCSVを選んでください",
+  sending: "CSVを検査しています…",
+  notComputable: "評価額の合計が 0 のため、構成を計算できません。",
+  notFound: "ページが見つかりません",
   emptyGuide:
     "証券会社から書き出した国内株式（現物）の保有資産CSVを選ぶと、評価額の合計、年間配当見込み、業種の構成を表示します。CSVと結果はサーバーに保存しません。",
   disclaimer: "SakuForge は投資助言を提供しません。計算結果の正確性・完全性は保証しません。",
@@ -17,3 +21,8 @@ export const MESSAGES = {
   renderFailed: "表示できませんでした。ページを再読み込みしてください。",
   clearConfirm: "このブラウザに保存した結果をすべて消します。元に戻せません。",
 } as const;
+
+/** The line under a findings list when the API returned only part of the findings. */
+export function omittedFindings(count: number): string {
+  return `ほかに ${count} 件あります。`;
+}

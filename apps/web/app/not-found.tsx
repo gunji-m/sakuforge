@@ -1,4 +1,5 @@
 import { connection } from "next/server";
+import { MESSAGES } from "../src/client/messages";
 
 export default async function NotFound() {
   // Rendered per request, for the same reason as the page.
@@ -6,9 +7,9 @@ export default async function NotFound() {
   return (
     <main className="main">
       <section className="card empty">
-        <h2>ページが見つかりません</h2>
+        <h2>{MESSAGES.notFound}</h2>
         <p>
-          <a href="/">sakuforge を開く</a>
+          <a href="/">SakuForge を開く</a>
         </p>
       </section>
     </main>

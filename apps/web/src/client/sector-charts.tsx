@@ -2,6 +2,7 @@
 
 import { Fragment, useState } from "react";
 import type { Aggregation, SectorComposition } from "./api-response";
+import { MESSAGES } from "./messages";
 import { barRows, formatPercent, OTHER_COLOR, summarizeDonut } from "./sectors";
 
 type Axis = "sector17" | "sector33";
@@ -154,7 +155,7 @@ export function SectorCharts({ aggregation }: { readonly aggregation: Aggregatio
       ) : (
         <div className="card donut">
           <h2>業種構成</h2>
-          <p className="figure-note">評価額の合計が 0 のため、構成を計算できません。</p>
+          <p className="figure-note">{MESSAGES.notComputable}</p>
         </div>
       )}
       <div className="card-outline bars-card">
