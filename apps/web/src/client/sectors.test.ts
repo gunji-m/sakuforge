@@ -56,7 +56,6 @@ test("境目の構成比も横棒とドーナツで丸めず、合計を 100.00 
   expect(
     formatPercent(summary.segments.reduce((total, { hundredths }) => total + hundredths, 0)),
   ).toBe("100.00");
-  expect(formatPercent(summary.topThreeHundredths)).toBe("100.00");
 });
 
 test("ドーナツは保有のある行だけを、応答の順で色分けする", () => {
@@ -88,14 +87,6 @@ test("保有業種数と総業種数は、分類済みの行から数える", ()
   expect(summary.totalCount).toBe(4);
 });
 
-test("上位 3 の合計は、保有のある行の先頭 3 つから作る", () => {
-  const summary = summarizeDonut(
-    computed(held("1", "40.10"), held("2", "30.20"), held("3", "20.30"), held("4", "9.40")),
-  );
-  expect(summary.topThreeHundredths).toBe(9060);
-  expect(summarizeDonut(computed(held("1", "100.00"))).topThreeHundredths).toBe(10000);
-});
-
 test("計算不可の構成は、空のドーナツと空の横棒になる", () => {
   const empty: SectorComposition = { status: "not_computable", sectors: [] };
   expect(summarizeDonut(empty)).toEqual({
@@ -103,7 +94,6 @@ test("計算不可の構成は、空のドーナツと空の横棒になる", ()
     otherHundredths: 0,
     heldCount: 0,
     totalCount: 0,
-    topThreeHundredths: 0,
   });
   expect(barRows(empty)).toEqual([]);
 });

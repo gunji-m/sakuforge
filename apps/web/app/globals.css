@@ -287,12 +287,6 @@ button,
   font-size: 14px;
 }
 
-.donut-top {
-  fill: var(--accent);
-  font-size: 13px;
-  font-weight: 700;
-}
-
 .legend {
   display: grid;
   grid-template-columns: 1fr 1fr;
