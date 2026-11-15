@@ -149,15 +149,25 @@ test.each([
 });
 
 function cells(code = "9A9A", custody = "NISA"): string[] {
-  return [code, "架空銘柄", "--", custody, ...Array<string>(18).fill("0.0001")];
+  return [
+    "架空銘柄",
+    "--",
+    "--",
+    "--",
+    code,
+    "--",
+    "--",
+    custody,
+    ...Array<string>(18).fill("0.0001"),
+  ];
 }
 
 const columns = Object.freeze({
-  stock_code: 0,
-  holding_count: 4,
-  purchase_price: 5,
-  current_price: 6,
-  dividend_per_share: 21,
+  stock_code: 4,
+  holding_count: 8,
+  purchase_price: 9,
+  current_price: 10,
+  dividend_per_share: 25,
 });
 
 test("repeated stock codes and unused custody values produce no findings", () => {
@@ -169,16 +179,16 @@ test("repeated stock codes and unused custody values produce no findings", () =>
 });
 
 test("independent value errors all retain their positions without mutating records", () => {
-  const invalid = Object.freeze(Array<string>(22).fill("synthetic-secret-value"));
+  const invalid = Object.freeze(Array<string>(26).fill("synthetic-secret-value"));
   const records = Object.freeze([Object.freeze({ row: 4, cells: invalid })]);
   expect(checkHoldingsValues(records, columns)).toEqual([
-    createFinding("stock_code_invalid", { row: 4, column: 1, field: "stock_code" }),
-    createFinding("holding_count_invalid", { row: 4, column: 5, field: "holding_count" }),
-    createFinding("purchase_price_invalid", { row: 4, column: 6, field: "purchase_price" }),
-    createFinding("current_price_invalid", { row: 4, column: 7, field: "current_price" }),
+    createFinding("stock_code_invalid", { row: 4, column: 5, field: "stock_code" }),
+    createFinding("holding_count_invalid", { row: 4, column: 9, field: "holding_count" }),
+    createFinding("purchase_price_invalid", { row: 4, column: 10, field: "purchase_price" }),
+    createFinding("current_price_invalid", { row: 4, column: 11, field: "current_price" }),
     createFinding("dividend_per_share_invalid", {
       row: 4,
-      column: 22,
+      column: 26,
       field: "dividend_per_share",
     }),
   ]);

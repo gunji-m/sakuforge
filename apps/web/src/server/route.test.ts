@@ -5,7 +5,7 @@ import * as currentStockMaster from "./current-stock-master";
 import { ERRORS } from "./errors";
 
 const header =
-  "銘柄,銘柄,銘柄,預り区分,保有株数,取得単価,現在値,現在値,評価損益,評価損益(%),買付金額,評価額,前日終値,前日比,前日比(%),評価額前日比,予想PER(倍),実績PBR(倍),予想配当利回り(%),予想EPS,実績BPS,予想1株配当";
+  "銘柄,銘柄,銘柄,銘柄,銘柄,銘柄,銘柄,預り区分,保有株数,取得単価,現在値,現在値,評価損益,評価損益(%),買付金額,評価額,前日終値,前日比,前日比(%),評価額前日比,予想PER(倍),実績PBR(倍),予想配当利回り(%),予想EPS,実績BPS,予想1株配当";
 const privateValues = [
   "7531",
   "2468.25",
@@ -30,11 +30,21 @@ afterEach(() => {
 });
 
 function csv(holdingCount = "7531", stockCode = "9A9A"): string {
-  const cells = [stockCode, "合成銘柄", "--", "合成区分", ...Array<string>(18).fill("0.0001")];
-  cells[4] = holdingCount;
-  cells[5] = "2468.25";
-  cells[6] = "8642.75";
-  cells[21] = "37.125";
+  const cells = [
+    "合成銘柄",
+    "--",
+    "--",
+    "--",
+    stockCode,
+    "--",
+    "--",
+    "合成区分",
+    ...Array<string>(18).fill("0.0001"),
+  ];
+  cells[8] = holdingCount;
+  cells[9] = "2468.25";
+  cells[10] = "8642.75";
+  cells[25] = "37.125";
   return `${header}\n${cells.join(",")}`;
 }
 
@@ -262,10 +272,10 @@ function hasKey(value: unknown, name: string): boolean {
 
 test("集計できた応答は、版・検査・集計・出典と基準日だけを持ち、coreの印を含めない", async () => {
   const input = [
-    "銘柄,保有株数,取得単価,現在値,予想1株配当",
-    "9A9A,100,1000,1200,40 ~ 50",
-    "9C9C,10,700,800,1",
-    "9D9D,1,90,100,1",
+    "銘柄,銘柄,銘柄,銘柄,銘柄,銘柄,銘柄,保有株数,取得単価,現在値,予想1株配当",
+    "--,--,--,--,9A9A,--,--,100,1000,1200,40 ~ 50",
+    "--,--,--,--,9C9C,--,--,10,700,800,1",
+    "--,--,--,--,9D9D,--,--,1,90,100,1",
   ].join("\n");
   const response = await POST(request(new TextEncoder().encode(input)));
   expect(response.status).toBe(200);
@@ -309,7 +319,8 @@ test("集計できた応答は、版・検査・集計・出典と基準日だ�
 });
 
 test("検査NGの応答は、集計を持たず、位置つきの所見と出典・基準日を持つ", async () => {
-  const input = "銘柄,保有株数,取得単価,現在値,予想1株配当\n9A9A,-1,1000,1200,40";
+  const input =
+    "銘柄,銘柄,銘柄,銘柄,銘柄,銘柄,銘柄,保有株数,取得単価,現在値,予想1株配当\n--,--,--,--,9A9A,--,--,-1,1000,1200,40";
   const response = await POST(request(new TextEncoder().encode(input)));
   expect(response.status).toBe(200);
   const body = await responseBody(response);
@@ -327,7 +338,7 @@ test("検査NGの応答は、集計を持たず、位置つきの所見と出典
           severity: "error",
           message: core.FINDING_MESSAGES.holding_count_invalid,
           row: 2,
-          column: 2,
+          column: 8,
           field: "holding_count",
         },
       ],
@@ -354,7 +365,8 @@ test("照合していない検査結果は、一覧と総数を持たない", as
 });
 
 test("合計が0なら、集計できた応答のまま構成を計算不可にする", async () => {
-  const input = "銘柄,保有株数,取得単価,現在値,予想1株配当\n9A9A,0,1000,1200,40";
+  const input =
+    "銘柄,銘柄,銘柄,銘柄,銘柄,銘柄,銘柄,保有株数,取得単価,現在値,予想1株配当\n--,--,--,--,9A9A,--,--,0,1000,1200,40";
   const response = await POST(request(new TextEncoder().encode(input)));
   expect(await responseBody(response)).toMatchObject({
     result: "aggregated",

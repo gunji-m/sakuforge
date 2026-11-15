@@ -12,11 +12,15 @@ import {
 } from "./types";
 
 const header =
-  "銘柄,銘柄,銘柄,預り区分,保有株数,取得単価,現在値,現在値,評価損益,評価損益(%),買付金額,評価額,前日終値,前日比,前日比(%),評価額前日比,予想PER(倍),実績PBR(倍),予想配当利回り(%),予想EPS,実績BPS,予想1株配当";
+  "銘柄,銘柄,銘柄,銘柄,銘柄,銘柄,銘柄,預り区分,保有株数,取得単価,現在値,現在値,評価損益,評価損益(%),買付金額,評価額,前日終値,前日比,前日比(%),評価額前日比,予想PER(倍),実績PBR(倍),予想配当利回り(%),予想EPS,実績BPS,予想1株配当";
 const syntheticCells = [
-  "9A9A",
   "架空銘柄",
+  "--",
   "架空分類",
+  "--",
+  "9A9A",
+  "--",
+  "--",
   "架空口座",
   ...Array<string>(18).fill("0.0001"),
 ];
@@ -100,7 +104,7 @@ test.each([false, true])("UTF-8 byte input, BOM=%s", (bom) => {
 
 test("CP932 header bytes are assembled in the test, followed by synthetic ASCII data", () => {
   const headerHex = [
-    "96 c1 95 bf 2c 96 c1 95 bf 2c 96 c1 95 bf 2c 97 61 82 e8 8b e6 95 aa",
+    "96 c1 95 bf 2c 96 c1 95 bf 2c 96 c1 95 bf 2c 96 c1 95 bf 2c 96 c1 95 bf 2c 96 c1 95 bf 2c 96 c1 95 bf 2c 97 61 82 e8 8b e6 95 aa",
     "2c 95 db 97 4c 8a 94 90 94 2c 8e e6 93 be 92 50 89 bf 2c 8c bb 8d dd 92 6c",
     "2c 8c bb 8d dd 92 6c 2c 95 5d 89 bf 91 b9 89 76 2c 95 5d 89 bf 91 b9 89 76 28 25 29",
     "2c 94 83 95 74 8b e0 8a 7a 2c 95 5d 89 bf 8a 7a 2c 91 4f 93 fa 8f 49 92 6c",
@@ -111,7 +115,7 @@ test("CP932 header bytes are assembled in the test, followed by synthetic ASCII 
   ].join(" ");
   const bytes = Uint8Array.from([
     ...headerHex.split(" ").map((hex) => Number.parseInt(hex, 16)),
-    ...utf8(`\r\n${Array<string>(22).fill("synthetic").join(",")}`),
+    ...utf8(`\r\n${Array<string>(26).fill("synthetic").join(",")}`),
   ]);
   expect(checked(bytes)).toMatchObject({
     encoding: "cp932",
@@ -122,7 +126,7 @@ test("CP932 header bytes are assembled in the test, followed by synthetic ASCII 
 });
 
 test("strings stay strings, with no value rules", () => {
-  const invalidValues = Array<string>(22).fill("not-validated");
+  const invalidValues = Array<string>(26).fill("not-validated");
   expect(checked(`\uFEFF${header}\n${invalidValues.join(",")}`)).toMatchObject({
     encoding: null,
     findings: [],
@@ -235,16 +239,35 @@ test.each(["保有株数", "取得単価", "予想1株配当"])(
   },
 );
 
-test("column indexes use first stock and current price headings, including header-only input", () => {
+test("column indexes use fifth stock and first current price headings, including header-only input", () => {
   for (const input of [header, `${header}\n${data}`]) {
     expect(checked(input).columns).toEqual({
-      stock_code: 0,
-      holding_count: 4,
-      purchase_price: 5,
-      current_price: 6,
-      dividend_per_share: 21,
+      stock_code: 4,
+      holding_count: 8,
+      purchase_price: 9,
+      current_price: 10,
+      dividend_per_share: 25,
     });
   }
+});
+
+test.each([1, 3, 6, 8])("%i stock headings are unsupported", (count) => {
+  const headings = [...Array<string>(count).fill("銘柄"), ...header.split(",").slice(7)];
+  expect(checked(headings.join(","))).toMatchObject({
+    profile: null,
+    columns: null,
+    findings: [createFinding("csv_header_unsupported")],
+  });
+});
+
+test("seven stock headings separated by an unused heading are unsupported", () => {
+  const headings = header.split(",");
+  headings.splice(4, 0, "合成列");
+  expect(checked(headings.join(","))).toMatchObject({
+    profile: null,
+    columns: null,
+    findings: [createFinding("csv_header_unsupported")],
+  });
 });
 
 test.each(['"unclosed', 'before"after', '"closed"after', '"closed" ', '"closed"\t'])(
@@ -280,7 +303,7 @@ test("control position counts blank lines; earlier ambiguous syntax omits its ro
 });
 
 test("TAB, LF and CR are allowed, and quoted empty cells and escaped quotes parse exactly", () => {
-  const cells = Array<string>(22).fill("");
+  const cells = Array<string>(26).fill("");
   cells[0] = "\t";
   cells[1] = '""';
   cells[2] = '""""';
@@ -352,9 +375,9 @@ test("data record limit ignores header, blanks and quoted newlines; accepts boun
 });
 
 test("column limit applies during scanning to header and data, including trailing empty columns", () => {
-  expect(checked(`${header}\n${data}`, { maxColumns: 22 }).findings).toEqual([]);
+  expect(checked(`${header}\n${data}`, { maxColumns: 26 }).findings).toEqual([]);
   for (const csv of [`${header},`, `${header}\n${data},`]) {
-    expect(checkCsvStructure(csv, { maxColumns: 22 })).toEqual({
+    expect(checkCsvStructure(csv, { maxColumns: 26 })).toEqual({
       kind: "rejected",
       reason: "maxColumns",
     });
