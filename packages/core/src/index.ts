@@ -1,38 +1,19 @@
-export { aggregateHoldings } from "./aggregation/aggregate";
+// The core's only way in from outside: inspect a holdings CSV and, if it passes,
+// aggregate it (docs/design.md section 2). Inspection or aggregation alone, and the
+// building blocks of findings, are not offered outside the package (#126).
 export type {
-  AggregationRejection,
-  HoldingRow,
   HoldingsAggregation,
   SectorComposition,
   SectorShare,
 } from "./aggregation/types";
 export { inspectAndAggregateHoldingsCsv } from "./holdings/inspect-and-aggregate";
 export type { HoldingsCsvResult } from "./holdings/types";
-export { createFinding, summarizeFindings } from "./inspection/findings";
-export { inspectHoldingsCsv } from "./inspection/inspect";
 export type {
-  CsvEncoding,
-  Finding,
-  FindingCode,
-  FindingCounts,
-  FindingField,
-  FindingPosition,
-  FindingSeverity,
-  FindingSummary,
   HoldingsInspection,
   InspectionLimits,
-  LimitRejection,
-  StockCodeMatch,
   StockMaster,
   StockMasterEntry,
   StockMasterSector,
 } from "./inspection/types";
-export {
-  DEFAULT_INSPECTION_LIMITS,
-  FINDING_CODES,
-  FINDING_FIELDS,
-  FINDING_MESSAGES,
-  HOLDINGS_COLUMNS,
-  HOLDINGS_PROFILE,
-} from "./inspection/types";
+export { DEFAULT_INSPECTION_LIMITS, FINDING_MESSAGES } from "./inspection/types";
 export { checkStockCode } from "./inspection/values";

@@ -1,11 +1,6 @@
 import { expect, test } from "vitest";
-import {
-  createFinding,
-  FINDING_CODES,
-  FINDING_FIELDS,
-  FINDING_MESSAGES,
-  summarizeFindings,
-} from "../index";
+import { createFinding, summarizeFindings } from "./findings";
+import { FINDING_CODES, FINDING_FIELDS, FINDING_MESSAGES } from "./types";
 
 test("all 14 fixed messages and their order match domain-rules section 6", () => {
   const expected = [

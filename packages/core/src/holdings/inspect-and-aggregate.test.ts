@@ -1,13 +1,9 @@
 import { expect, test } from "vitest";
-import {
-  aggregateHoldings,
-  type HoldingRow,
-  type HoldingsCsvResult,
-  inspectAndAggregateHoldingsCsv,
-  inspectHoldingsCsv,
-  type StockMaster,
-  type StockMasterEntry,
-} from "../index";
+import { aggregateHoldings } from "../aggregation/aggregate";
+import type { HoldingRow } from "../aggregation/types";
+import { type HoldingsCsvResult, inspectAndAggregateHoldingsCsv } from "../index";
+import { inspectHoldingsCsv } from "../inspection/inspect";
+import type { StockMaster, StockMasterEntry } from "../inspection/types";
 
 const header =
   "銘柄,銘柄,銘柄,預り区分,保有株数,取得単価,現在値,現在値,評価損益,評価損益(%),買付金額,評価額,前日終値,前日比,前日比(%),評価額前日比,予想PER(倍),実績PBR(倍),予想配当利回り(%),予想EPS,実績BPS,予想1株配当";
