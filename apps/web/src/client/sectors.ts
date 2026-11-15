@@ -18,10 +18,9 @@ export function toHundredths(ratio: string): number {
   return Number(ratio.replace(".", ""));
 }
 
-/** Hundredths of a percent as text with one decimal, rounded half up: 9368 -> "93.7". */
+/** Hundredths of a percent as text with two decimals, without rounding: 9368 -> "93.68". */
 export function formatPercent(hundredths: number): string {
-  const tenths = Math.floor((hundredths + 5) / 10);
-  return `${Math.floor(tenths / 10)}.${tenths % 10}`;
+  return `${Math.floor(hundredths / 100)}.${String(hundredths % 100).padStart(2, "0")}`;
 }
 
 export function sectorLabel(sector: SectorShare): string {
@@ -74,7 +73,7 @@ export interface BarRow {
   readonly key: string;
   readonly label: string;
   readonly held: boolean;
-  /** One decimal, for display. */
+  /** Two decimals, as the API returns them. */
   readonly percent: string;
   /** Bar length relative to the largest row, 0 to 100. */
   readonly width: number;

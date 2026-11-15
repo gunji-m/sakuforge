@@ -34,15 +34,29 @@ test.each([
 });
 
 test.each([
-  [0, "0.0"],
-  [4, "0.0"],
-  [5, "0.1"],
-  [625, "6.3"],
-  [9368, "93.7"],
-  [9995, "100.0"],
-  [10000, "100.0"],
-])("%s を小数 1 桁（四捨五入）の % にする", (hundredths, expected) => {
+  [0, "0.00"],
+  [5, "0.05"],
+  [625, "6.25"],
+  [7595, "75.95"],
+  [2405, "24.05"],
+  [9368, "93.68"],
+  [10000, "100.00"],
+])("%s を小数 2 桁の % にする（丸めない）", (hundredths, expected) => {
   expect(formatPercent(hundredths)).toBe(expected);
+});
+
+test("境目の構成比も横棒とドーナツで丸めず、合計を 100.00 に保つ", () => {
+  const composition = computed(held("1", "75.95"), held(null, "24.05"));
+  expect(barRows(composition).map(({ percent }) => percent)).toEqual(["75.95", "24.05"]);
+  const summary = summarizeDonut(composition);
+  expect(summary.segments.map(({ hundredths }) => formatPercent(hundredths))).toEqual([
+    "75.95",
+    "24.05",
+  ]);
+  expect(
+    formatPercent(summary.segments.reduce((total, { hundredths }) => total + hundredths, 0)),
+  ).toBe("100.00");
+  expect(formatPercent(summary.topThreeHundredths)).toBe("100.00");
 });
 
 test("ドーナツは保有のある行だけを、応答の順で色分けする", () => {
@@ -98,10 +112,10 @@ test("横棒は応答の順で、最大の行を 100 として長さを決め、
   expect(
     barRows(computed(held("1", "80.00"), held(null, "20.00"), held("5", "0.00"), unheld("2"))),
   ).toEqual([
-    { key: "1", label: "合成業種1", held: true, percent: "80.0", width: 100 },
-    { key: "unclassified", label: "未分類", held: true, percent: "20.0", width: 25 },
-    { key: "5", label: "合成業種5", held: true, percent: "0.0", width: 0 },
-    { key: "2", label: "合成業種2", held: false, percent: "0.0", width: 0 },
+    { key: "1", label: "合成業種1", held: true, percent: "80.00", width: 100 },
+    { key: "unclassified", label: "未分類", held: true, percent: "20.00", width: 25 },
+    { key: "5", label: "合成業種5", held: true, percent: "0.00", width: 0 },
+    { key: "2", label: "合成業種2", held: false, percent: "0.00", width: 0 },
   ]);
 });
 
