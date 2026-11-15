@@ -40,7 +40,7 @@ function reasonOf(value: unknown, overrides: object = relaxed): StockMasterRejec
   return result.kind === "rejected" ? result.reason : null;
 }
 
-test("検証を通った JSON を、核の銘柄マスターと基準日に変換する", () => {
+test("検証を通った JSON を、core の銘柄マスターと基準日に変換する", () => {
   const result = parseStockMaster(master(), now, relaxed);
   expect(result.kind).toBe("loaded");
   if (result.kind !== "loaded") return;
