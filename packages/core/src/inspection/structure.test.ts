@@ -1,15 +1,15 @@
 import { expect, test } from "vitest";
+import { createFinding } from "./findings";
+import { checkCsvStructure } from "./structure";
+import type { StructureInspection } from "./types";
 import {
-  createFinding,
   DEFAULT_INSPECTION_LIMITS,
   FINDING_FIELDS,
   type FindingCode,
   HOLDINGS_COLUMNS,
   HOLDINGS_PROFILE,
   type InspectionLimits,
-} from "../index";
-import { checkCsvStructure } from "./structure";
-import type { StructureInspection } from "./types";
+} from "./types";
 
 const header =
   "銘柄,銘柄,銘柄,預り区分,保有株数,取得単価,現在値,現在値,評価損益,評価損益(%),買付金額,評価額,前日終値,前日比,前日比(%),評価額前日比,予想PER(倍),実績PBR(倍),予想配当利回り(%),予想EPS,実績BPS,予想1株配当";

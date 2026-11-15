@@ -69,6 +69,10 @@ pnpm workspace は次の2つのパッケージで構成します。
 | `@sakuforge/core`（`packages/core`） | CSV の検査、集計、型 | 10進演算と入力検証の最小限の依存だけ。React、Next.js、実行環境固有の API に依存しない |
 | `@sakuforge/web`（`apps/web`） | Next.js（App Router）の画面と、サーバー関数（検査と集計） | `@sakuforge/core` |
 
+`@sakuforge/core` の入口は、検査を通ったものだけを集計する `inspectAndAggregateHoldingsCsv` の 1 つです。
+ほかに公開するのは、その入力と出力を表す型、上限の既定値、所見の固定 message、銘柄マスターの検証で使う
+`checkStockCode` だけで、検査だけ・集計だけを core の外から呼ぶ道はありません（#126）。
+
 銘柄マスター JSON を生成する道具（取得と変換のスクリプト、定期実行の設定）は、非公開のリポジトリに置き、
 このリポジトリには置きません（[4](#4-銘柄マスター-json-の流れ)）。東証の Excel を読む依存を、公開するアプリの
 lockfile に入れないためです。`.gitignore` の `data/stock-master/` は、build のときに取得した JSON の置き場で、
