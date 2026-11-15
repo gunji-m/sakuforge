@@ -53,19 +53,22 @@ function isForbiddenPlace(path: string): boolean {
   );
 }
 
-function resolveRelative(from: string, specifier: string, read: ReadSource): string {
+/**
+ * The file a relative path leads to, or `null` when it leads to no file. Besides the path
+ * itself, it tries the TypeScript extensions, a directory's `index`, and a JavaScript
+ * extension written for a TypeScript file (`./x.js` for `./x.ts`), as the bundler does.
+ */
+function resolveRelative(from: string, specifier: string, read: ReadSource): string | null {
   const base = resolve(dirname(from), specifier);
-  for (const candidate of [
+  const withoutJs = base.replace(/\.[mc]?jsx?$/, "");
+  const candidates = [
     base,
-    `${base}.ts`,
-    `${base}.tsx`,
+    ...[".ts", ".tsx", ".mts", ".cts"].map((extension) => `${base}${extension}`),
+    ...[".ts", ".tsx", ".mts", ".cts"].map((extension) => `${withoutJs}${extension}`),
     join(base, "index.ts"),
     join(base, "index.tsx"),
-  ]) {
-    if (/\.tsx?$/.test(candidate) && read(candidate) !== null) return candidate;
-  }
-  // A path that is not a TypeScript file (for example a stylesheet) is still checked by place.
-  return base;
+  ];
+  return candidates.find((candidate) => read(candidate) !== null) ?? null;
 }
 
 /** Follows relative paths from the entries and lists every forbidden reference reached. */
@@ -85,8 +88,14 @@ export function forbiddenImports(entries: readonly string[], read: ReadSource): 
     }
     for (const specifier of quotedRelativePaths(source)) {
       const resolved = resolveRelative(file, specifier, read);
-      if (isForbiddenPlace(resolved)) {
+      if (
+        isForbiddenPlace(resolve(dirname(file), specifier)) ||
+        (resolved !== null && isForbiddenPlace(resolved))
+      ) {
         found.push(`${name} -> ${specifier}`);
+      } else if (resolved === null) {
+        // Fail closed: a path this check cannot follow might lead anywhere.
+        found.push(`${name} -> ${specifier} (unresolved)`);
       } else {
         queue.push(resolved);
       }
@@ -184,6 +193,26 @@ test("間接の読み込み（ディレクトリの index.tsx を含む）も辿
     "src/shared/view/helper.ts -> app/api",
     "src/shared/view/helper.ts -> ../../../app/api/inspect/route",
   ]);
+});
+
+test(".js と書いた指定子から、実体の .ts を辿る", () => {
+  expect(
+    check("src/client/example.ts", {
+      "src/client/example.ts": 'import { helper } from "../shared/helper.js";\n',
+      "src/shared/helper.ts": 'import { load } from "../server/current-stock-master";\n',
+    }),
+  ).toEqual([
+    "src/shared/helper.ts -> /server/",
+    "src/shared/helper.ts -> ../server/current-stock-master",
+  ]);
+});
+
+test("どのファイルにも辿れない相対パスは、違反にする（見逃さないことを優先する）", () => {
+  expect(
+    check("src/client/example.ts", {
+      "src/client/example.ts": 'import { x } from "./missing";\n',
+    }),
+  ).toEqual(["src/client/example.ts -> ./missing (unresolved)"]);
 });
 
 test("禁止先を指す文字は、コメントの中でも違反にする（見逃さないことを優先する）", () => {
