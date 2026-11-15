@@ -68,14 +68,11 @@ function Donut({ composition }: { readonly composition: SectorComposition }) {
             transform="rotate(-90 160 160)"
           />
         ))}
-        <text x="160" y="150" textAnchor="middle" className="donut-count">
+        <text x="160" y="160" textAnchor="middle" className="donut-count">
           {summary.heldCount}
         </text>
-        <text x="160" y="178" textAnchor="middle" className="donut-total">
+        <text x="160" y="188" textAnchor="middle" className="donut-total">
           業種 / {summary.totalCount}
-        </text>
-        <text x="160" y="202" textAnchor="middle" className="donut-top">
-          上位 3 で {formatPercent(summary.topThreeHundredths)}%
         </text>
       </svg>
       <ul className="legend">

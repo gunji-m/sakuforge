@@ -42,7 +42,6 @@ export interface DonutSummary {
   /** Classified sectors with holdings, and all classified sectors the stock master knows. */
   readonly heldCount: number;
   readonly totalCount: number;
-  readonly topThreeHundredths: number;
 }
 
 /**
@@ -65,7 +64,6 @@ export function summarizeDonut(composition: SectorComposition): DonutSummary {
     otherHundredths: sum(held.slice(SECTOR_COLORS.length)),
     heldCount: classified.filter((sector) => sector.held).length,
     totalCount: classified.length,
-    topThreeHundredths: sum(held.slice(0, 3)),
   };
 }
 
