@@ -99,6 +99,6 @@ test("画面が読む応答の版は、サーバー関数が返す版と同じ",
   expect(SUPPORTED_SCHEMA_VERSION).toBe(RESPONSE_SCHEMA_VERSION);
 });
 
-test("画面が送る前に確かめる大きさの上限は、核の上限と同じ", () => {
+test("画面が送る前に確かめる大きさの上限は、core の上限と同じ", () => {
   expect(MAX_CSV_BYTES).toBe(DEFAULT_INSPECTION_LIMITS.maxBytes);
 });

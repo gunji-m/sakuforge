@@ -2,6 +2,8 @@
 
 ADR は「何をどう決めたか、理由は何か」を1件ずつ残す短い決定記録です。設計書ではなく、判断の履歴です。
 
+追記（2026-11-15、#135）：この ADR の「核」は `packages/core`（core）を指す。
+
 - Status: Accepted
 - Date: 2026-11-01
 - Related: [ADR 0001](0001-declaration-and-origin.md)、[ADR 0002](0002-public-repository.md)、
