@@ -15,7 +15,7 @@ import { MAX_CSV_BYTES } from "../client/precheck";
 import { ERRORS, errorResponse } from "./errors";
 import { RESPONSE_SCHEMA_VERSION } from "./response";
 
-const header = "銘柄,保有株数,取得単価,現在値,予想1株配当";
+const header = "銘柄,銘柄,銘柄,銘柄,銘柄,銘柄,銘柄,保有株数,取得単価,現在値,予想1株配当";
 
 function post(body: string | null, contentType = "text/csv"): Promise<Response> {
   return POST(
@@ -36,9 +36,12 @@ async function readByScreen(response: Response) {
 }
 
 test.each([
-  ["集計できた応答", `${header}\n9A9A,100,1000,1200,40`],
-  ["未知の証券コードつきの応答", `${header}\n9A9A,100,1000,1200,40\n9D9D,10,500,600,5`],
-  ["合計が 0 で構成を計算できない応答", `${header}\n9A9A,0,1000,1200,40`],
+  ["集計できた応答", `${header}\n--,--,--,--,9A9A,--,--,100,1000,1200,40`],
+  [
+    "未知の証券コードつきの応答",
+    `${header}\n--,--,--,--,9A9A,--,--,100,1000,1200,40\n--,--,--,--,9D9D,--,--,10,500,600,5`,
+  ],
+  ["合計が 0 で構成を計算できない応答", `${header}\n--,--,--,--,9A9A,--,--,0,1000,1200,40`],
 ])("%sを、画面がそのまま読める", async (_name, csv) => {
   const response = await post(csv);
   expect(response.status).toBe(200);
@@ -49,7 +52,9 @@ test.each([
 });
 
 test("未知の証券コードは、画面の読み取りの後も一覧と件数が残る", async () => {
-  const { parsed } = await readByScreen(await post(`${header}\n9D9D,10,500,600,5`));
+  const { parsed } = await readByScreen(
+    await post(`${header}\n--,--,--,--,9D9D,--,--,10,500,600,5`),
+  );
   expect(parsed?.inspection.stockCodeMatch).toEqual({
     status: "checked",
     unknownCodes: ["9D9D"],
@@ -58,14 +63,16 @@ test("未知の証券コードは、画面の読み取りの後も一覧と件�
 });
 
 test("合計が 0 の応答は、画面の読み取りの後も構成を計算不可のまま持つ", async () => {
-  const { parsed } = await readByScreen(await post(`${header}\n9A9A,0,1000,1200,40`));
+  const { parsed } = await readByScreen(
+    await post(`${header}\n--,--,--,--,9A9A,--,--,0,1000,1200,40`),
+  );
   if (parsed?.result !== "aggregated") throw new Error("expected aggregated");
   expect(parsed.aggregation.sector17.status).toBe("not_computable");
   expect(parsed.aggregation.sector33.status).toBe("not_computable");
 });
 
 test.each([
-  ["値の不正による検査 NG", `${header}\n9A9A,-1,1000,1200,40`],
+  ["値の不正による検査 NG", `${header}\n--,--,--,--,9A9A,--,--,-1,1000,1200,40`],
   ["空の CSV による検査 NG", null],
 ])("%sの応答を、画面がそのまま読める", async (_name, csv) => {
   const response = await post(csv);
@@ -87,7 +94,10 @@ test.each(Object.keys(ERRORS) as (keyof typeof ERRORS)[])(
 );
 
 test("サーバー関数が返した 415 を、画面がそのまま読める", async () => {
-  const response = await post(`${header}\n9A9A,100,1000,1200,40`, "application/json");
+  const response = await post(
+    `${header}\n--,--,--,--,9A9A,--,--,100,1000,1200,40`,
+    "application/json",
+  );
   expect(response.status).toBe(415);
   expect(parseApiError(await response.json())).toEqual({
     code: "unsupported_media_type",

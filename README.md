@@ -32,7 +32,7 @@ Dependabot（月 1 回）が見るのは npm の依存と GitHub Actions だけ�
 2. 別のターミナルから、合成の CSV を送る。`"result":"aggregated"` を含む JSON が返れば動いている
 
    ```bash
-   printf '銘柄,保有株数,取得単価,現在値,予想1株配当\n9A9A,100,1000,1200,40 ~ 50\n9C9C,10,700,800,1\n' | curl -s -X POST -H 'Content-Type: text/csv' --data-binary @- http://localhost:3000/api/inspect
+   printf '銘柄,銘柄,銘柄,銘柄,銘柄,銘柄,銘柄,保有株数,取得単価,現在値,予想1株配当\n--,--,--,--,9A9A,--,--,100,1000,1200,40 ~ 50\n--,--,--,--,9C9C,--,--,10,700,800,1\n' | curl -s -X POST -H 'Content-Type: text/csv' --data-binary @- http://localhost:3000/api/inspect
    ```
 
 要求と応答の形は [docs/design.md](docs/design.md) の 8 節にある。

@@ -78,15 +78,26 @@ export function checkCsvStructure(
   const fieldsByHeader = new Map<string, FindingField>(
     FINDING_FIELDS.map((field) => [HOLDINGS_COLUMNS[field], field]),
   );
+  const stockCodePositions: number[] = [];
   // Scan cell edges once to remove only ASCII spaces (U+0020), without normalization.
   for (const [index, cell] of header.cells.entries()) {
     const field = fieldsByHeader.get(trimAsciiSpaces(cell));
     if (field === undefined) continue;
+    if (field === "stock_code") {
+      stockCodePositions.push(index);
+      continue;
+    }
     if (columns[field] === -1) columns[field] = index;
-    else if (field !== "stock_code" && field !== "current_price") {
+    else if (field !== "current_price") {
       return result(encoding, [createFinding("csv_header_unsupported")], rowsScanned);
     }
   }
+  const firstStockCodePosition = stockCodePositions[0] ?? -1;
+  const lastStockCodePosition = stockCodePositions[6] ?? -1;
+  if (stockCodePositions.length !== 7 || lastStockCodePosition - firstStockCodePosition !== 6) {
+    return result(encoding, [createFinding("csv_header_unsupported")], rowsScanned);
+  }
+  columns.stock_code = stockCodePositions[4] ?? -1;
   if (FINDING_FIELDS.some((field) => columns[field] === -1)) {
     return result(encoding, [createFinding("csv_header_unsupported")], rowsScanned);
   }
