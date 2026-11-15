@@ -10,41 +10,80 @@ import { fileURLToPath } from "node:url";
 import { expect, test } from "vitest";
 
 const WEB_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const REPO_ROOT = resolve(WEB_ROOT, "../..");
 
 type ReadSource = (path: string) => string | null;
 
 /**
- * Blanks out comments and the contents of string literals, keeping every offset, so that
- * text in comments and strings is never read as code. Quote characters stay in place.
+ * Blanks out comments and the text of string literals, keeping every offset, so that text
+ * in comments and strings is never read as code. Quote characters stay in place, and the
+ * `${...}` expressions inside template literals are scanned as code.
  */
 export function maskSource(source: string): string {
   const out = source.split("");
-  let i = 0;
   const blank = (from: number, to: number) => {
     for (let k = from; k < to; k++) if (out[k] !== "\n") out[k] = " ";
   };
-  while (i < source.length) {
-    const char = source[i];
-    const next = source[i + 1];
-    if (char === "/" && next === "/") {
-      const end = source.indexOf("\n", i);
-      const stop = end === -1 ? source.length : end;
-      blank(i, stop);
-      i = stop;
-    } else if (char === "/" && next === "*") {
-      const end = source.indexOf("*/", i + 2);
-      const stop = end === -1 ? source.length : end + 2;
-      blank(i, stop);
-      i = stop;
-    } else if (char === '"' || char === "'" || char === "`") {
-      let j = i + 1;
-      while (j < source.length && source[j] !== char) j += source[j] === "\\" ? 2 : 1;
-      blank(i + 1, Math.min(j, source.length));
-      i = j + 1;
-    } else {
-      i += 1;
+
+  // Scans code from `start`. Inside a `${...}` it stops after the closing brace.
+  function code(start: number, insideTemplate: boolean): number {
+    let i = start;
+    let depth = 0;
+    while (i < source.length) {
+      const char = source[i];
+      const next = source[i + 1];
+      if (char === "/" && next === "/") {
+        const end = source.indexOf("\n", i);
+        const stop = end === -1 ? source.length : end;
+        blank(i, stop);
+        i = stop;
+      } else if (char === "/" && next === "*") {
+        const end = source.indexOf("*/", i + 2);
+        const stop = end === -1 ? source.length : end + 2;
+        blank(i, stop);
+        i = stop;
+      } else if (char === '"' || char === "'") {
+        let j = i + 1;
+        while (j < source.length && source[j] !== char) j += source[j] === "\\" ? 2 : 1;
+        blank(i + 1, Math.min(j, source.length));
+        i = j + 1;
+      } else if (char === "`") {
+        i = template(i + 1);
+      } else if (char === "{") {
+        depth += 1;
+        i += 1;
+      } else if (char === "}") {
+        if (insideTemplate && depth === 0) return i + 1;
+        depth -= 1;
+        i += 1;
+      } else {
+        i += 1;
+      }
     }
+    return i;
   }
+
+  // Scans a template literal from just after its opening backtick.
+  function template(start: number): number {
+    let i = start;
+    while (i < source.length) {
+      const char = source[i];
+      if (char === "\\") {
+        blank(i, i + 2);
+        i += 2;
+      } else if (char === "`") {
+        return i + 1;
+      } else if (char === "$" && source[i + 1] === "{") {
+        i = code(i + 2, true);
+      } else {
+        blank(i, i + 1);
+        i += 1;
+      }
+    }
+    return i;
+  }
+
+  code(0, false);
   return out.join("");
 }
 
@@ -83,7 +122,13 @@ function isForbidden(specifier: string, resolved: string | null): boolean {
   if (specifier === "@sakuforge/core" || specifier.startsWith("@sakuforge/core/")) return true;
   if (resolved === null) return false;
   const path = relative(WEB_ROOT, resolved).split("\\").join("/");
-  return path.startsWith("src/server/") || path.startsWith("app/api/");
+  const fromRepo = relative(REPO_ROOT, resolved).split("\\").join("/");
+  return (
+    path.startsWith("src/server/") ||
+    path.startsWith("app/api/") ||
+    fromRepo === "packages/core" ||
+    fromRepo.startsWith("packages/core/")
+  );
 }
 
 function resolveRelative(from: string, specifier: string, read: ReadSource): string | null {
@@ -224,4 +269,32 @@ test("ディレクトリの index.tsx を経由した読み込みも辿る", () 
   expect(
     forbiddenImports([join(WEB_ROOT, "src/client/example.ts")], (path) => files[path] ?? null),
   ).toEqual(["src/shared/view/index.tsx -> ../../server/current-stock-master"]);
+});
+
+test("テンプレート文字列の補間式の中の動的 import も読み取る", () => {
+  // The input is source text with template literals. "@{" stands for the "$" + "{" that opens
+  // an interpolation, so that this file itself contains no placeholder-like strings.
+  const source = [
+    'const label = async () => `master: @{await import("../server/current-stock-master")}`;',
+    'const nested = `a @{`b @{import("./inner")}`} c`;',
+    'const text = `import("@sakuforge/core") is only text`;',
+  ]
+    .join("\n")
+    .replaceAll("@{", `${"$"}{`);
+  expect(source).toContain(`${"$"}{await import(`);
+  expect(importSpecifiers(source).sort()).toEqual(
+    ["../server/current-stock-master", "./inner"].sort(),
+  );
+});
+
+test("相対パスで読み込んだ core も見つける", () => {
+  const entry = join(WEB_ROOT, "src/client/example.ts");
+  const files: Record<string, string> = {
+    [entry]:
+      'import { inspectAndAggregateHoldingsCsv } from "../../../../packages/core/src/index";\n',
+    [join(REPO_ROOT, "packages/core/src/index.ts")]: "export {};\n",
+  };
+  expect(forbiddenImports([entry], (path) => files[path] ?? null)).toEqual([
+    "src/client/example.ts -> ../../../../packages/core/src/index",
+  ]);
 });
