@@ -13,16 +13,70 @@ const WEB_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 type ReadSource = (path: string) => string | null;
 
+/**
+ * Blanks out comments and the contents of string literals, keeping every offset, so that
+ * text in comments and strings is never read as code. Quote characters stay in place.
+ */
+export function maskSource(source: string): string {
+  const out = source.split("");
+  let i = 0;
+  const blank = (from: number, to: number) => {
+    for (let k = from; k < to; k++) if (out[k] !== "\n") out[k] = " ";
+  };
+  while (i < source.length) {
+    const char = source[i];
+    const next = source[i + 1];
+    if (char === "/" && next === "/") {
+      const end = source.indexOf("\n", i);
+      const stop = end === -1 ? source.length : end;
+      blank(i, stop);
+      i = stop;
+    } else if (char === "/" && next === "*") {
+      const end = source.indexOf("*/", i + 2);
+      const stop = end === -1 ? source.length : end + 2;
+      blank(i, stop);
+      i = stop;
+    } else if (char === '"' || char === "'" || char === "`") {
+      let j = i + 1;
+      while (j < source.length && source[j] !== char) j += source[j] === "\\" ? 2 : 1;
+      blank(i + 1, Math.min(j, source.length));
+      i = j + 1;
+    } else {
+      i += 1;
+    }
+  }
+  return out.join("");
+}
+
 /** Module specifiers of static imports, re-exports, side-effect imports and dynamic imports. */
 export function importSpecifiers(source: string): string[] {
+  const masked = maskSource(source);
+  // Each pattern ends at the opening quote of the specifier; the literal is read from the source.
   const patterns = [
-    /^\s*(?:import|export)\b[^;]*?\bfrom\s*["']([^"']+)["']/gm,
-    /^\s*import\s*["']([^"']+)["']/gm,
-    /\bimport\s*\(\s*["']([^"']+)["']\s*\)/g,
+    /(?:^|[;}\s])(?:import|export)\b[^;"'`]*?\bfrom\s*(["'])/g,
+    /(?:^|[;}\s])import\s*(["'])/g,
+    /\bimport\s*\(\s*(["'])/g,
   ];
-  return patterns.flatMap((pattern) =>
-    [...source.matchAll(pattern)].map((match) => match[1] ?? ""),
-  );
+  const found: string[] = [];
+  for (const pattern of patterns) {
+    for (const match of masked.matchAll(pattern)) {
+      const quote = match[1] ?? '"';
+      const start = (match.index ?? 0) + match[0].length;
+      const end = source.indexOf(quote, start);
+      if (end > start) found.push(source.slice(start, end));
+    }
+  }
+  return found;
+}
+
+/** Whether the file's first statement is the `"use client"` directive, after any comments. */
+export function isClientDirective(source: string): boolean {
+  const masked = maskSource(source);
+  const start = masked.search(/\S/);
+  if (start === -1) return false;
+  const quote = source[start];
+  if (quote !== '"' && quote !== "'") return false;
+  return source.slice(start + 1, source.indexOf(quote, start + 1)) === "use client";
 }
 
 function isForbidden(specifier: string, resolved: string | null): boolean {
@@ -35,7 +89,13 @@ function isForbidden(specifier: string, resolved: string | null): boolean {
 function resolveRelative(from: string, specifier: string, read: ReadSource): string | null {
   if (!specifier.startsWith(".")) return null;
   const base = resolve(dirname(from), specifier);
-  for (const candidate of [base, `${base}.ts`, `${base}.tsx`, join(base, "index.ts")]) {
+  for (const candidate of [
+    base,
+    `${base}.ts`,
+    `${base}.tsx`,
+    join(base, "index.ts"),
+    join(base, "index.tsx"),
+  ]) {
     if (/\.tsx?$/.test(candidate) && read(candidate) !== null) return candidate;
   }
   // A path that is not a TypeScript file (for example a stylesheet) is still checked by place.
@@ -82,9 +142,7 @@ function screenEntries(): string[] {
     (path) => /\.tsx?$/.test(path) && !/\.test\.tsx?$/.test(path),
   );
   const app = filesUnder(join(WEB_ROOT, "app")).filter(
-    (path) =>
-      /\.tsx?$/.test(path) &&
-      /^\s*["']use client["']/.test(readFileSync(path, "utf8").replace(/^\s*\/\/.*\n/gm, "")),
+    (path) => /\.tsx?$/.test(path) && isClientDirective(readFileSync(path, "utf8")),
   );
   return [...client, ...app];
 }
@@ -122,6 +180,48 @@ test("検査の仕組みは、直接・間接に読み込まれたサーバー�
   ]);
 });
 
-test("コメントの中の import は数えない", () => {
-  expect(importSpecifiers('// import x from "@sakuforge/core";\nconst a = 1;\n')).toEqual([]);
+test("コメントと文字列の中の import は数えない", () => {
+  const source = [
+    '// import x from "@sakuforge/core";',
+    '// import("@sakuforge/core") is forbidden here.',
+    '/* import { y } from "../server/errors"; */',
+    "const text = \"import('@sakuforge/core')\";",
+    'const other = `import "../server/errors"`;',
+    'import { MESSAGES } from "./messages";',
+  ].join("\n");
+  expect(importSpecifiers(source)).toEqual(["./messages"]);
+});
+
+test("複数行の import、副作用の import、動的 import を読み取る", () => {
+  const source = [
+    "import {",
+    "  a,",
+    "  b,",
+    '} from "./multi";',
+    'import "./side-effect";',
+    'export * from "./reexport";',
+    'const lazy = () => import("./lazy");',
+  ].join("\n");
+  expect(importSpecifiers(source).sort()).toEqual(
+    ["./lazy", "./multi", "./reexport", "./side-effect"].sort(),
+  );
+});
+
+test("先頭のコメントの後にある use client を見つける", () => {
+  expect(isClientDirective('"use client";\nexport {};')).toBe(true);
+  expect(isClientDirective("// note\n'use client';\n")).toBe(true);
+  expect(isClientDirective('/**\n * Header.\n */\n"use client";\n')).toBe(true);
+  expect(isClientDirective('import x from "./x";\n"use client";\n')).toBe(false);
+  expect(isClientDirective('/* "use client" */\nexport {};')).toBe(false);
+});
+
+test("ディレクトリの index.tsx を経由した読み込みも辿る", () => {
+  const files: Record<string, string> = {
+    [join(WEB_ROOT, "src/client/example.ts")]: 'import { View } from "../shared/view";\n',
+    [join(WEB_ROOT, "src/shared/view/index.tsx")]:
+      'import { loadCurrentStockMaster } from "../../server/current-stock-master";\n',
+  };
+  expect(
+    forbiddenImports([join(WEB_ROOT, "src/client/example.ts")], (path) => files[path] ?? null),
+  ).toEqual(["src/shared/view/index.tsx -> ../../server/current-stock-master"]);
 });
