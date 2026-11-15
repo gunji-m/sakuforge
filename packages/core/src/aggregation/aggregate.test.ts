@@ -1,10 +1,7 @@
 import { expect, test } from "vitest";
-import {
-  aggregateHoldings,
-  type HoldingRow,
-  type StockMaster,
-  type StockMasterEntry,
-} from "../index";
+import type { StockMaster, StockMasterEntry } from "../inspection/types";
+import { aggregateHoldings } from "./aggregate";
+import type { HoldingRow } from "./types";
 
 function row(
   stockCode = "1001",

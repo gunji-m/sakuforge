@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { createFinding } from "../index";
+import { createFinding } from "./findings";
 import { checkHoldingsValues, checkStockCode, isDividendPerShare, isHoldingNumber } from "./values";
 
 test.each(["9A9A", "9C9C", "9D9D", "1A0Y"])("stock code %j is accepted verbatim", (code) => {
