@@ -122,7 +122,7 @@ test("保有株数が不正なら検査NGを200で返す", async () => {
   });
 });
 
-test("未知コード一覧は核の結果のまま返す", async () => {
+test("未知コード一覧はcoreの結果のまま返す", async () => {
   const response = await POST(request(new TextEncoder().encode(csv("7531", "9D9D"))));
   expect(response.status).toBe(200);
   expect(await responseBody(response)).toMatchObject({
@@ -187,7 +187,7 @@ test("本文の読み込み例外を固定の400にする", async () => {
   await expectError(await POST(request(body)), "request_body_unreadable");
 });
 
-test("本文がnullなら核のcsv_emptyを返す", async () => {
+test("本文がnullならcoreのcsv_emptyを返す", async () => {
   const response = await POST(request(null));
   expect(response.status).toBe(200);
   expect(await responseBody(response)).toMatchObject({
@@ -203,7 +203,7 @@ test.each([
   ["invalid_input", "internal_error"],
   ["invalid_limits", "internal_error"],
   ["invalid_stock_master", "internal_error"],
-] as const)("核の%sを%sに対応させる", async (reason, code) => {
+] as const)("coreの%sを%sに対応させる", async (reason, code) => {
   vi.spyOn(core, "inspectAndAggregateHoldingsCsv").mockReturnValueOnce({
     kind: "rejected",
     reason,
@@ -222,14 +222,14 @@ test("集計拒否は検査の詳細を付けず固定の500にする", async ()
   await expectError(await POST(request()), "internal_error");
 });
 
-test("核の例外を再送出せず固定の500にする", async () => {
+test("coreの例外を再送出せず固定の500にする", async () => {
   vi.spyOn(core, "inspectAndAggregateHoldingsCsv").mockImplementationOnce(() => {
     throw new Error("合成例外の秘密文字列");
   });
   await expectError(await POST(request()), "internal_error");
 });
 
-test("検証に失敗した銘柄マスターでは、本文を読まず核も呼ばず固定の500にする", async () => {
+test("検証に失敗した銘柄マスターでは、本文を読まずcoreも呼ばず固定の500にする", async () => {
   vi.spyOn(currentStockMaster, "loadCurrentStockMaster").mockReturnValueOnce({
     kind: "rejected",
     reason: "invalid_sector",
@@ -242,7 +242,7 @@ test("検証に失敗した銘柄マスターでは、本文を読まず核も�
   expect(inspect).not.toHaveBeenCalled();
 });
 
-test("核へ渡す銘柄マスターは、検証を通ったものだけにする", async () => {
+test("coreへ渡す銘柄マスターは、検証を通ったものだけにする", async () => {
   const inspect = vi.spyOn(core, "inspectAndAggregateHoldingsCsv");
   await POST(request());
   const stockMaster = inspect.mock.calls[0]?.[1];
@@ -260,7 +260,7 @@ function hasKey(value: unknown, name: string): boolean {
   return Object.entries(value).some(([key, child]) => key === name || hasKey(child, name));
 }
 
-test("集計できた応答は、版・検査・集計・出典と基準日だけを持ち、核の印を含めない", async () => {
+test("集計できた応答は、版・検査・集計・出典と基準日だけを持ち、coreの印を含めない", async () => {
   const input = [
     "銘柄,保有株数,取得単価,現在値,予想1株配当",
     "9A9A,100,1000,1200,40 ~ 50",
@@ -366,7 +366,7 @@ test("合計が0なら、集計できた応答のまま構成を計算不可に�
   });
 });
 
-test("核が項目を足しても、決めた項目だけを応答に写す", async () => {
+test("coreが項目を足しても、決めた項目だけを応答に写す", async () => {
   const actual = core.inspectAndAggregateHoldingsCsv(csv(), new Map());
   if (actual.kind !== "aggregated") throw new Error("合成テストデータが不正です");
   vi.spyOn(core, "inspectAndAggregateHoldingsCsv").mockReturnValueOnce({
