@@ -1,8 +1,14 @@
 /**
  * The screen's code is shipped to the browser. It must not reach the server side
- * (`src/server/`, `app/api/`) or the core (`@sakuforge/core`), so that the stock master
- * and the inspection code never leave the server function (docs/design.md section 2).
- * This test follows the screen's imports and fails when one of them gets there.
+ * (`src/server/`, `app/api/`) or the core (`packages/core`, `@sakuforge/core`), so that
+ * the stock master and the inspection code never leave the server function
+ * (docs/design.md section 2).
+ *
+ * This check fails closed. It does not parse the code: it reads every quoted relative path
+ * in a screen file, wherever it appears, and follows the ones that lead to a file. A screen
+ * file that merely mentions a forbidden place, even in a comment or a string, also fails.
+ * Such a false alarm is cheap to fix by rewording; a missed import would silently ship the
+ * stock master to the browser.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
@@ -14,125 +20,40 @@ const REPO_ROOT = resolve(WEB_ROOT, "../..");
 
 type ReadSource = (path: string) => string | null;
 
+/** Text that a screen file must not contain anywhere, because it names a forbidden place. */
+const FORBIDDEN_TEXT = ["@sakuforge/core", "packages/core", "src/server", "app/api", "/server/"];
+
 /**
- * Blanks out comments and the text of string literals, keeping every offset, so that text
- * in comments and strings is never read as code. Quote characters stay in place, and the
- * `${...}` expressions inside template literals are scanned as code.
+ * Every quoted relative path in the text, with any quote character, wherever it appears
+ * (code, comments, strings, template literals, nested interpolations).
  */
-export function maskSource(source: string): string {
-  const out = source.split("");
-  const blank = (from: number, to: number) => {
-    for (let k = from; k < to; k++) if (out[k] !== "\n") out[k] = " ";
+export function quotedRelativePaths(source: string): string[] {
+  return [...source.matchAll(/["'`](\.{1,2}\/[^"'`\s$]*)["'`$]/g)].map((match) => match[1] ?? "");
+}
+
+/** Whether the text contains the `"use client"` directive anywhere (fails closed). */
+export function mentionsUseClient(source: string): boolean {
+  return /["'`]use client["'`]/.test(source);
+}
+
+function placeOf(path: string): { web: string; repo: string } {
+  return {
+    web: relative(WEB_ROOT, path).split("\\").join("/"),
+    repo: relative(REPO_ROOT, path).split("\\").join("/"),
   };
-
-  // Scans code from `start`. Inside a `${...}` it stops after the closing brace.
-  function code(start: number, insideTemplate: boolean): number {
-    let i = start;
-    let depth = 0;
-    while (i < source.length) {
-      const char = source[i];
-      const next = source[i + 1];
-      if (char === "/" && next === "/") {
-        const end = source.indexOf("\n", i);
-        const stop = end === -1 ? source.length : end;
-        blank(i, stop);
-        i = stop;
-      } else if (char === "/" && next === "*") {
-        const end = source.indexOf("*/", i + 2);
-        const stop = end === -1 ? source.length : end + 2;
-        blank(i, stop);
-        i = stop;
-      } else if (char === '"' || char === "'") {
-        let j = i + 1;
-        while (j < source.length && source[j] !== char) j += source[j] === "\\" ? 2 : 1;
-        blank(i + 1, Math.min(j, source.length));
-        i = j + 1;
-      } else if (char === "`") {
-        i = template(i + 1);
-      } else if (char === "{") {
-        depth += 1;
-        i += 1;
-      } else if (char === "}") {
-        if (insideTemplate && depth === 0) return i + 1;
-        depth -= 1;
-        i += 1;
-      } else {
-        i += 1;
-      }
-    }
-    return i;
-  }
-
-  // Scans a template literal from just after its opening backtick.
-  function template(start: number): number {
-    let i = start;
-    while (i < source.length) {
-      const char = source[i];
-      if (char === "\\") {
-        blank(i, i + 2);
-        i += 2;
-      } else if (char === "`") {
-        return i + 1;
-      } else if (char === "$" && source[i + 1] === "{") {
-        i = code(i + 2, true);
-      } else {
-        blank(i, i + 1);
-        i += 1;
-      }
-    }
-    return i;
-  }
-
-  code(0, false);
-  return out.join("");
 }
 
-/** Module specifiers of static imports, re-exports, side-effect imports and dynamic imports. */
-export function importSpecifiers(source: string): string[] {
-  const masked = maskSource(source);
-  // Each pattern ends at the opening quote of the specifier; the literal is read from the source.
-  const patterns = [
-    /(?:^|[;}\s])(?:import|export)\b[^;"'`]*?\bfrom\s*(["'])/g,
-    /(?:^|[;}\s])import\s*(["'])/g,
-    /\bimport\s*\(\s*(["'])/g,
-  ];
-  const found: string[] = [];
-  for (const pattern of patterns) {
-    for (const match of masked.matchAll(pattern)) {
-      const quote = match[1] ?? '"';
-      const start = (match.index ?? 0) + match[0].length;
-      const end = source.indexOf(quote, start);
-      if (end > start) found.push(source.slice(start, end));
-    }
-  }
-  return found;
-}
-
-/** Whether the file's first statement is the `"use client"` directive, after any comments. */
-export function isClientDirective(source: string): boolean {
-  const masked = maskSource(source);
-  const start = masked.search(/\S/);
-  if (start === -1) return false;
-  const quote = source[start];
-  if (quote !== '"' && quote !== "'") return false;
-  return source.slice(start + 1, source.indexOf(quote, start + 1)) === "use client";
-}
-
-function isForbidden(specifier: string, resolved: string | null): boolean {
-  if (specifier === "@sakuforge/core" || specifier.startsWith("@sakuforge/core/")) return true;
-  if (resolved === null) return false;
-  const path = relative(WEB_ROOT, resolved).split("\\").join("/");
-  const fromRepo = relative(REPO_ROOT, resolved).split("\\").join("/");
+function isForbiddenPlace(path: string): boolean {
+  const { web, repo } = placeOf(path);
   return (
-    path.startsWith("src/server/") ||
-    path.startsWith("app/api/") ||
-    fromRepo === "packages/core" ||
-    fromRepo.startsWith("packages/core/")
+    web.startsWith("src/server/") ||
+    web.startsWith("app/api/") ||
+    repo === "packages/core" ||
+    repo.startsWith("packages/core/")
   );
 }
 
-function resolveRelative(from: string, specifier: string, read: ReadSource): string | null {
-  if (!specifier.startsWith(".")) return null;
+function resolveRelative(from: string, specifier: string, read: ReadSource): string {
   const base = resolve(dirname(from), specifier);
   for (const candidate of [
     base,
@@ -147,7 +68,7 @@ function resolveRelative(from: string, specifier: string, read: ReadSource): str
   return base;
 }
 
-/** Follows relative imports from the entries and lists every forbidden import reached. */
+/** Follows relative paths from the entries and lists every forbidden reference reached. */
 export function forbiddenImports(entries: readonly string[], read: ReadSource): string[] {
   const seen = new Set<string>();
   const queue = [...entries];
@@ -158,16 +79,20 @@ export function forbiddenImports(entries: readonly string[], read: ReadSource): 
     seen.add(file);
     const source = read(file);
     if (source === null) continue;
-    for (const specifier of importSpecifiers(source)) {
+    const name = placeOf(file).web;
+    for (const text of FORBIDDEN_TEXT) {
+      if (source.includes(text)) found.push(`${name} -> ${text}`);
+    }
+    for (const specifier of quotedRelativePaths(source)) {
       const resolved = resolveRelative(file, specifier, read);
-      if (isForbidden(specifier, resolved)) {
-        found.push(`${relative(WEB_ROOT, file)} -> ${specifier}`);
-      } else if (resolved !== null) {
+      if (isForbiddenPlace(resolved)) {
+        found.push(`${name} -> ${specifier}`);
+      } else {
         queue.push(resolved);
       }
     }
   }
-  return found;
+  return [...new Set(found)];
 }
 
 function filesUnder(directory: string): string[] {
@@ -187,12 +112,15 @@ function screenEntries(): string[] {
     (path) => /\.tsx?$/.test(path) && !/\.test\.tsx?$/.test(path),
   );
   const app = filesUnder(join(WEB_ROOT, "app")).filter(
-    (path) => /\.tsx?$/.test(path) && isClientDirective(readFileSync(path, "utf8")),
+    (path) =>
+      /\.tsx?$/.test(path) &&
+      !placeOf(path).web.startsWith("app/api/") &&
+      mentionsUseClient(readFileSync(path, "utf8")),
   );
   return [...client, ...app];
 }
 
-test("画面側のコードは、サーバー側と核を読み込まない", () => {
+test("画面側のコードは、サーバー側と core を読み込まない", () => {
   const entries = screenEntries();
   // The check is meaningful only if it actually found the screen's files.
   expect(entries.some((path) => path.endsWith("dashboard.tsx"))).toBe(true);
@@ -200,101 +128,74 @@ test("画面側のコードは、サーバー側と核を読み込まない", ()
   expect(forbiddenImports(entries, readFromDisk)).toEqual([]);
 });
 
-test("検査の仕組みは、直接・間接に読み込まれたサーバー側と核を見つける", () => {
-  const files: Record<string, string> = {
-    [join(WEB_ROOT, "src/client/ok.ts")]: 'import { MESSAGES } from "./messages";\n',
-    [join(WEB_ROOT, "src/client/messages.ts")]: "export const MESSAGES = {};\n",
-    [join(WEB_ROOT, "src/client/core.ts")]:
-      'import {\n  checkStockCode,\n} from "@sakuforge/core";\n',
-    [join(WEB_ROOT, "src/client/server.ts")]: 'export { ERRORS } from "../server/errors";\n',
-    [join(WEB_ROOT, "src/client/indirect.tsx")]: 'import "./helper";\n',
-    [join(WEB_ROOT, "src/client/helper.ts")]:
-      'const load = () => import("../../app/api/inspect/route");\n',
-    [join(WEB_ROOT, "src/server/errors.ts")]: "export const ERRORS = {};\n",
-  };
-  const read: ReadSource = (path) => files[path] ?? null;
-  const at = (name: string) => [join(WEB_ROOT, "src/client", name)];
+/** Runs the check on synthetic files, keyed by their path under `apps/web/`. */
+function check(entry: string, files: Record<string, string>): string[] {
+  const byPath = new Map(Object.entries(files).map(([path, text]) => [join(WEB_ROOT, path), text]));
+  return forbiddenImports([join(WEB_ROOT, entry)], (path) => byPath.get(path) ?? null);
+}
 
-  expect(forbiddenImports(at("ok.ts"), read)).toEqual([]);
-  expect(forbiddenImports(at("core.ts"), read)).toEqual(["src/client/core.ts -> @sakuforge/core"]);
-  expect(forbiddenImports(at("server.ts"), read)).toEqual([
-    "src/client/server.ts -> ../server/errors",
-  ]);
-  expect(forbiddenImports(at("indirect.tsx"), read)).toEqual([
-    "src/client/helper.ts -> ../../app/api/inspect/route",
-  ]);
-});
-
-test("コメントと文字列の中の import は数えない", () => {
-  const source = [
-    '// import x from "@sakuforge/core";',
-    '// import("@sakuforge/core") is forbidden here.',
-    '/* import { y } from "../server/errors"; */',
-    "const text = \"import('@sakuforge/core')\";",
-    'const other = `import "../server/errors"`;',
-    'import { MESSAGES } from "./messages";',
-  ].join("\n");
-  expect(importSpecifiers(source)).toEqual(["./messages"]);
-});
-
-test("複数行の import、副作用の import、動的 import を読み取る", () => {
-  const source = [
-    "import {",
-    "  a,",
-    "  b,",
-    '} from "./multi";',
-    'import "./side-effect";',
-    'export * from "./reexport";',
-    'const lazy = () => import("./lazy");',
-  ].join("\n");
-  expect(importSpecifiers(source).sort()).toEqual(
-    ["./lazy", "./multi", "./reexport", "./side-effect"].sort(),
-  );
-});
-
-test("先頭のコメントの後にある use client を見つける", () => {
-  expect(isClientDirective('"use client";\nexport {};')).toBe(true);
-  expect(isClientDirective("// note\n'use client';\n")).toBe(true);
-  expect(isClientDirective('/**\n * Header.\n */\n"use client";\n')).toBe(true);
-  expect(isClientDirective('import x from "./x";\n"use client";\n')).toBe(false);
-  expect(isClientDirective('/* "use client" */\nexport {};')).toBe(false);
-});
-
-test("ディレクトリの index.tsx を経由した読み込みも辿る", () => {
-  const files: Record<string, string> = {
-    [join(WEB_ROOT, "src/client/example.ts")]: 'import { View } from "../shared/view";\n',
-    [join(WEB_ROOT, "src/shared/view/index.tsx")]:
-      'import { loadCurrentStockMaster } from "../../server/current-stock-master";\n',
-  };
+test("画面側だけを読み込むなら通る", () => {
   expect(
-    forbiddenImports([join(WEB_ROOT, "src/client/example.ts")], (path) => files[path] ?? null),
-  ).toEqual(["src/shared/view/index.tsx -> ../../server/current-stock-master"]);
+    check("src/client/ok.ts", {
+      "src/client/ok.ts": 'import { MESSAGES } from "./messages";\n',
+      "src/client/messages.ts": "export const MESSAGES = {};\n",
+    }),
+  ).toEqual([]);
 });
 
-test("テンプレート文字列の補間式の中の動的 import も読み取る", () => {
-  // The input is source text with template literals. "@{" stands for the "$" + "{" that opens
-  // an interpolation, so that this file itself contains no placeholder-like strings.
-  const source = [
-    'const label = async () => `master: @{await import("../server/current-stock-master")}`;',
-    'const nested = `a @{`b @{import("./inner")}`} c`;',
-    'const text = `import("@sakuforge/core") is only text`;',
-  ]
-    .join("\n")
-    .replaceAll("@{", `${"$"}{`);
-  expect(source).toContain(`${"$"}{await import(`);
-  expect(importSpecifiers(source).sort()).toEqual(
-    ["../server/current-stock-master", "./inner"].sort(),
-  );
+test("core とサーバー側の読み込みを、書き方によらず見つける", () => {
+  const cases: [string, string][] = [
+    ['import {\n  checkStockCode,\n} from "@sakuforge/core";\n', "@sakuforge/core"],
+    ['export { ERRORS } from "../server/errors";\n', "../server/errors"],
+    ['import "../server/errors";\n', "../server/errors"],
+    ['const load = () => import("../server/errors");\n', "../server/errors"],
+    ["const load = () => import(`../server/errors`);\n", "../server/errors"],
+    ['const quote = /\'/;\nconst load = () => import("../server/errors");\n', "../server/errors"],
+    [
+      // A template literal whose interpolation imports; "@{" stands for "$" + "{".
+      'const label = async () => `master: @{await import("../server/errors")}`;\n'.replace(
+        "@{",
+        `${"$"}{`,
+      ),
+      "../server/errors",
+    ],
+    ['import { x } from "../../../packages/core/src/index";\n', "packages/core"],
+  ];
+  for (const [source, expected] of cases) {
+    const found = check("src/client/entry.ts", {
+      "src/client/entry.ts": source,
+      "src/server/errors.ts": "export const ERRORS = {};\n",
+    });
+    expect(
+      found.some((line) => line.includes(expected)),
+      source,
+    ).toBe(true);
+  }
 });
 
-test("相対パスで読み込んだ core も見つける", () => {
-  const entry = join(WEB_ROOT, "src/client/example.ts");
-  const files: Record<string, string> = {
-    [entry]:
-      'import { inspectAndAggregateHoldingsCsv } from "../../../../packages/core/src/index";\n',
-    [join(REPO_ROOT, "packages/core/src/index.ts")]: "export {};\n",
-  };
-  expect(forbiddenImports([entry], (path) => files[path] ?? null)).toEqual([
-    "src/client/example.ts -> ../../../../packages/core/src/index",
+test("間接の読み込み（ディレクトリの index.tsx を含む）も辿る", () => {
+  expect(
+    check("src/client/example.ts", {
+      "src/client/example.ts": 'import { View } from "../shared/view";\n',
+      "src/shared/view/index.tsx": 'import "./helper";\n',
+      "src/shared/view/helper.ts": 'const load = () => import("../../../app/api/inspect/route");\n',
+    }),
+  ).toEqual([
+    "src/shared/view/helper.ts -> app/api",
+    "src/shared/view/helper.ts -> ../../../app/api/inspect/route",
   ]);
+});
+
+test("禁止先を指す文字は、コメントの中でも違反にする（見逃さないことを優先する）", () => {
+  expect(
+    check("src/client/note.ts", {
+      "src/client/note.ts": "// This file must not import @sakuforge/core.\nexport {};\n",
+    }),
+  ).toEqual(["src/client/note.ts -> @sakuforge/core"]);
+});
+
+test("use client は、先頭のコメントの後にあっても入口として数える", () => {
+  expect(mentionsUseClient('"use client";\nexport {};')).toBe(true);
+  expect(mentionsUseClient('/**\n * Header.\n */\n"use client";\n')).toBe(true);
+  expect(mentionsUseClient("export const a = 1;\n")).toBe(false);
 });
