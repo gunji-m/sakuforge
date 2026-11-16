@@ -2,7 +2,7 @@ import { expect, test } from "vitest";
 import { createFinding, summarizeFindings } from "./findings";
 import { FINDING_CODES, FINDING_FIELDS, FINDING_MESSAGES } from "./types";
 
-test("all 14 fixed messages and their order match domain-rules section 6", () => {
+test("all 13 fixed messages and their order match domain-rules section 6", () => {
   const expected = [
     ["csv_empty", "CSVファイルが空です。保有資産のCSVを選んでください。"],
     ["csv_control_character", "CSVに使用できない文字が含まれています。"],
@@ -17,7 +17,6 @@ test("all 14 fixed messages and their order match domain-rules section 6", () =>
     ["stock_code_invalid", "証券コードを読み取れません。4文字の証券コードが必要です。"],
     ["stock_code_unsupported", "5桁の証券コードには、まだ対応していません。"],
     ["holding_count_invalid", "保有株数を読み取れません。0以上の数値が必要です。"],
-    ["purchase_price_invalid", "取得単価を読み取れません。0以上の数値が必要です。"],
     ["current_price_invalid", "現在値を読み取れません。0以上の数値が必要です。"],
     [
       "dividend_per_share_invalid",
@@ -29,7 +28,7 @@ test("all 14 fixed messages and their order match domain-rules section 6", () =>
     ],
   ];
   expect(FINDING_CODES.map((code) => [code, FINDING_MESSAGES[code]])).toEqual(expected);
-  expect(Object.keys(FINDING_MESSAGES)).toHaveLength(14);
+  expect(Object.keys(FINDING_MESSAGES)).toHaveLength(13);
   for (const code of FINDING_CODES) {
     expect(createFinding(code)).toEqual({
       code,
@@ -41,11 +40,10 @@ test("all 14 fixed messages and their order match domain-rules section 6", () =>
   }
 });
 
-test("the five fields and optional position properties are preserved without extra properties", () => {
+test("the four fields and optional position properties are preserved without extra properties", () => {
   expect(FINDING_FIELDS).toEqual([
     "stock_code",
     "holding_count",
-    "purchase_price",
     "current_price",
     "dividend_per_share",
   ]);

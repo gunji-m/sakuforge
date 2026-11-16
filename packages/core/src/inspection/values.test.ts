@@ -165,7 +165,6 @@ function cells(code = "9A9A", custody = "NISA"): string[] {
 const columns = Object.freeze({
   stock_code: 4,
   holding_count: 8,
-  purchase_price: 9,
   current_price: 10,
   dividend_per_share: 25,
 });
@@ -184,7 +183,6 @@ test("independent value errors all retain their positions without mutating recor
   expect(checkHoldingsValues(records, columns)).toEqual([
     createFinding("stock_code_invalid", { row: 4, column: 5, field: "stock_code" }),
     createFinding("holding_count_invalid", { row: 4, column: 9, field: "holding_count" }),
-    createFinding("purchase_price_invalid", { row: 4, column: 10, field: "purchase_price" }),
     createFinding("current_price_invalid", { row: 4, column: 11, field: "current_price" }),
     createFinding("dividend_per_share_invalid", {
       row: 4,

@@ -47,7 +47,6 @@ test("profile and required column headings match section 2", () => {
   expect(HOLDINGS_COLUMNS).toEqual({
     stock_code: "銘柄",
     holding_count: "保有株数",
-    purchase_price: "取得単価",
     current_price: "現在値",
     dividend_per_share: "予想1株配当",
   });
@@ -228,7 +227,7 @@ test.each(Object.values(HOLDINGS_COLUMNS))(
   },
 );
 
-test.each(["保有株数", "取得単価", "予想1株配当"])(
+test.each(["保有株数", "予想1株配当"])(
   "duplicate required heading %s is unsupported after ASCII trimming",
   (heading) => {
     expect(checked(`${header}, ${heading} \n${data},0`)).toMatchObject({
@@ -244,7 +243,6 @@ test("column indexes use fifth stock and first current price headings, including
     expect(checked(input).columns).toEqual({
       stock_code: 4,
       holding_count: 8,
-      purchase_price: 9,
       current_price: 10,
       dividend_per_share: 25,
     });

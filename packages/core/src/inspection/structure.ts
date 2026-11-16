@@ -71,7 +71,6 @@ export function checkCsvStructure(
   const columns = {
     stock_code: -1,
     holding_count: -1,
-    purchase_price: -1,
     current_price: -1,
     dividend_per_share: -1,
   };
