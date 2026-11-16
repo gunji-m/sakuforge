@@ -214,6 +214,7 @@ function parseComposition(value: unknown): SectorComposition | null {
   for (const sector of sectors) {
     if (!isRecord(sector)) return null;
     const { code, name, ratio, held } = sector;
+    // Both axes are read with the same loose shape; the exact codes are checked on the server.
     const classified = isText(code, 4) && /^[0-9]{1,4}$/.test(code) && isText(name, 100);
     const unclassified = code === null && name === null && held === true;
     if (

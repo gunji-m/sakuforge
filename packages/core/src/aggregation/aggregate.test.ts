@@ -552,6 +552,16 @@ test.each(["0", "18", "01"])("sector17 rejects code %s", (code) => {
   });
 });
 
+// Same shape as the server function's check (docs/design.md 4.3): 1 to 4 digits without a leading
+// zero, so that "50" and "050" are never counted as two different sectors (#161).
+test.each(["0", "050", "0050", "01"])("sector33 rejects code %s", (code) => {
+  const master = new Map([["1001", { sector17: null, sector33: { code, name: "合成33業種" } }]]);
+  expect(aggregateHoldings([row()], master)).toEqual({
+    kind: "rejected",
+    reason: "invalid_stock_master",
+  });
+});
+
 test("sector17 accepts code 17 and sector33 accepts code 18", () => {
   const master = new Map([
     [
