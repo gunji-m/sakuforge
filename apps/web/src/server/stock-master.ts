@@ -113,7 +113,8 @@ export function parseStockMaster(
     ) {
       return rejected("invalid_shape");
     }
-    const asOfTime = typeof asOf === "string" ? monthEndTime(asOf, now) : null;
+    if (typeof asOf !== "string") return rejected("invalid_as_of");
+    const asOfTime = monthEndTime(asOf, now);
     if (asOfTime === null) return rejected("invalid_as_of");
     // The data cannot have been fetched before the day it is as of.
     if (Date.parse(fetchedAt) < asOfTime) return rejected("invalid_as_of");
