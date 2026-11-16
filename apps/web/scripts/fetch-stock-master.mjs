@@ -32,6 +32,37 @@ export function isProductionBuild(env) {
 }
 
 /**
+ * Reads the body, stopping as soon as it passes `limit` bytes (docs/input-trust-principles.md 2:
+ * read at most the limit plus one byte). Returns null when it is larger than `limit`.
+ * @param {ReadableStream<Uint8Array> | null} body
+ * @param {number} limit
+ * @returns {Promise<Uint8Array | null>}
+ */
+async function readAtMost(body, limit) {
+  if (body === null) return new Uint8Array(0);
+  const reader = body.getReader();
+  const chunks = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > limit) {
+      await reader.cancel().catch(() => {});
+      return null;
+    }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return bytes;
+}
+
+/**
  * @param {{ env: Record<string, string | undefined>, fetch: typeof fetch, root: string }} options
  * @returns {Promise<{ kind: "skipped" } | { kind: "written" } | { kind: "failed", reason: string }>}
  */
@@ -57,16 +88,15 @@ export async function fetchStockMaster({ env, fetch, root }) {
       redirect: "error",
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
-    if (!response.ok) return { kind: "failed", reason: `http_${response.status}` };
-    const length = Number(response.headers.get("Content-Length"));
-    if (Number.isFinite(length) && length > MAX_BYTES) {
-      return { kind: "failed", reason: "too_large" };
+    if (!response.ok) {
+      await response.body?.cancel().catch(() => {});
+      return { kind: "failed", reason: `http_${response.status}` };
     }
-    bytes = new Uint8Array(await response.arrayBuffer());
+    bytes = await readAtMost(response.body, MAX_BYTES);
   } catch {
     return { kind: "failed", reason: "fetch_failed" };
   }
-  if (bytes.byteLength > MAX_BYTES) return { kind: "failed", reason: "too_large" };
+  if (bytes === null) return { kind: "failed", reason: "too_large" };
 
   let text;
   try {
@@ -83,7 +113,7 @@ export async function fetchStockMaster({ env, fetch, root }) {
     await writeFile(partial, text, { encoding: "utf8", mode: 0o600 });
     await rename(partial, target);
   } catch {
-    await rm(partial, { force: true });
+    await rm(partial, { force: true }).catch(() => {});
     return { kind: "failed", reason: "write_failed" };
   }
   return { kind: "written" };
@@ -91,7 +121,13 @@ export async function fetchStockMaster({ env, fetch, root }) {
 
 async function main() {
   const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-  const result = await fetchStockMaster({ env: process.env, fetch: globalThis.fetch, root });
+  let result;
+  try {
+    result = await fetchStockMaster({ env: process.env, fetch: globalThis.fetch, root });
+  } catch {
+    // Never print exception text or a stack trace: they can carry paths or values.
+    result = { kind: "failed", reason: "unexpected" };
+  }
   if (result.kind === "failed") {
     console.error(`stock master fetch failed: ${result.reason}`);
     process.exitCode = 1;

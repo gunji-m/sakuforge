@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
@@ -80,7 +80,6 @@ test.each([
   [respond("{ 合成の壊れた JSON"), "not_json"],
   [vi.fn(async () => new Response(new Uint8Array([0x7b, 0xff, 0x7d]))), "not_json"],
   [respond(" ".repeat(MAX_BYTES + 1)), "too_large"],
-  [respond(body, { headers: { "Content-Length": String(MAX_BYTES + 1) } }), "too_large"],
 ])(
   "取得できない・JSON でない・大きすぎるときは失敗し、何も書かない（%#）",
   async (fetch, reason) => {
@@ -89,3 +88,38 @@ test.each([
     expect(() => written()).toThrow();
   },
 );
+
+test("長さの分からない大きな本文は、上限を超えた時点で読むのをやめて失敗する", async () => {
+  const chunk = new Uint8Array(1024 * 1024);
+  let pulled = 0;
+  let cancelled = false;
+  const stream = new ReadableStream<Uint8Array>(
+    {
+      pull(controller) {
+        pulled += 1;
+        controller.enqueue(chunk);
+      },
+      cancel() {
+        cancelled = true;
+      },
+    },
+    { highWaterMark: 0 },
+  );
+  const fetch = vi.fn(async () => new Response(stream));
+  expect(await fetchStockMaster({ env, fetch, root })).toEqual({
+    kind: "failed",
+    reason: "too_large",
+  });
+  expect(cancelled).toBe(true);
+  expect(pulled).toBeLessThanOrEqual(MAX_BYTES / chunk.byteLength + 2);
+  expect(() => written()).toThrow();
+});
+
+test("書き込めないときは、例外を投げず固定の理由で失敗する", async () => {
+  // A regular file where the directory should be: mkdir, write and cleanup all fail.
+  writeFileSync(join(root, "data"), "合成");
+  expect(await fetchStockMaster({ env, fetch: respond(body), root })).toEqual({
+    kind: "failed",
+    reason: "write_failed",
+  });
+});
