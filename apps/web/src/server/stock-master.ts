@@ -53,19 +53,24 @@ function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-/** A real calendar date that is not after `now` (UTC). */
-function isPastDate(text: string, now: Date): boolean {
+/**
+ * The time of a base date (UTC midnight) that is a real calendar date, the last day of its month
+ * (the stock master is as of a month end, docs/design.md 4.2), and not after `now`. Otherwise null.
+ */
+function monthEndTime(text: string, now: Date): number | null {
   const match = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(text);
-  if (match === null) return false;
+  if (match === null) return null;
   const [year, month, day] = [Number(match[1]), Number(match[2]), Number(match[3])];
   const time = Date.UTC(year, month - 1, day);
   const date = new Date(time);
-  return (
-    date.getUTCFullYear() === year &&
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return date.getUTCFullYear() === year &&
     date.getUTCMonth() === month - 1 &&
     date.getUTCDate() === day &&
+    day === lastDay &&
     time <= now.getTime()
-  );
+    ? time
+    : null;
 }
 
 function rejected(reason: StockMasterRejectionReason): StockMasterResult {
@@ -108,7 +113,10 @@ export function parseStockMaster(
     ) {
       return rejected("invalid_shape");
     }
-    if (typeof asOf !== "string" || !isPastDate(asOf, now)) return rejected("invalid_as_of");
+    const asOfTime = typeof asOf === "string" ? monthEndTime(asOf, now) : null;
+    if (asOfTime === null) return rejected("invalid_as_of");
+    // The data cannot have been fetched before the day it is as of.
+    if (Date.parse(fetchedAt) < asOfTime) return rejected("invalid_as_of");
     if (stocks.length < limits.minStocks || stocks.length > limits.maxStocks) {
       return rejected("stock_count_out_of_range");
     }
