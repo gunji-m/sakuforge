@@ -12,6 +12,11 @@ const nextConfig: NextConfig = {
       source: "/api/:path*",
       headers: [{ key: "Content-Security-Policy", value: API_CONTENT_SECURITY_POLICY }],
     },
+    // The icon is a static file with nothing to load, so it gets the same policy as the API.
+    {
+      source: "/icon.svg",
+      headers: [{ key: "Content-Security-Policy", value: API_CONTENT_SECURITY_POLICY }],
+    },
   ],
 };
 
