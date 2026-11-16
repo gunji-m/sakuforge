@@ -1,4 +1,6 @@
+import type { HoldingsCsvResult } from "@sakuforge/core";
 import { RESPONSE_SCHEMA_VERSION } from "./response";
+import type { StockMasterRejectionReason } from "./stock-master";
 
 export const ERRORS = {
   csv_too_large: {
@@ -33,4 +35,22 @@ export function errorResponse(code: keyof typeof ERRORS): Response {
     { schemaVersion: RESPONSE_SCHEMA_VERSION, error: { code, message } },
     { status, headers: { "Cache-Control": "no-store" } },
   );
+}
+
+type CoreRejection = Extract<HoldingsCsvResult, { kind: "rejected" | "aggregation_rejected" }>;
+
+/**
+ * Why a request ended in `internal_error`. Each is a fixed word built only from fixed codes, so
+ * the log line never carries CSV content, asset values, file names or exception text (#97).
+ */
+export type InternalErrorReason =
+  | `stock_master_${StockMasterRejectionReason}`
+  | `core_${CoreRejection["reason"]}`
+  | "unexpected_result"
+  | "exception";
+
+/** Logs one fixed word for the operator, then returns the fixed `internal_error` answer. */
+export function internalError(reason: InternalErrorReason): Response {
+  console.error(`internal_error ${reason}`);
+  return errorResponse("internal_error");
 }

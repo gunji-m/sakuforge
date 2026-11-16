@@ -23,11 +23,25 @@ beforeEach(() => {
 
 afterEach(() => {
   try {
-    for (const method of consoleMethods) expect(console[method]).not.toHaveBeenCalled();
+    for (const method of consoleMethods) {
+      if (method === "error") continue;
+      expect(console[method]).not.toHaveBeenCalled();
+    }
+    // The only log allowed is one fixed word when answering internal_error (#97).
+    for (const call of vi.mocked(console.error).mock.calls) {
+      expect(call).toHaveLength(1);
+      expect(call[0]).toMatch(/^internal_error [a-z0-9_]+$/);
+      for (const value of privateValues) expect(String(call[0])).not.toContain(value);
+    }
   } finally {
     vi.restoreAllMocks();
   }
 });
+
+function expectLogged(reason: string | null): void {
+  const lines = vi.mocked(console.error).mock.calls.map((call) => call[0]);
+  expect(lines).toEqual(reason === null ? [] : [`internal_error ${reason}`]);
+}
 
 function csv(holdingCount = "7531", stockCode = "9A9A"): string {
   const cells = [
@@ -219,6 +233,7 @@ test.each([
     reason,
   });
   await expectError(await POST(request()), code);
+  expectLogged(code === "internal_error" ? `core_${reason}` : null);
 });
 
 test("集計拒否は検査の詳細を付けず固定の500にする", async () => {
@@ -230,6 +245,7 @@ test("集計拒否は検査の詳細を付けず固定の500にする", async ()
     reason: "invalid_input",
   });
   await expectError(await POST(request()), "internal_error");
+  expectLogged("core_invalid_input");
 });
 
 test("coreの例外を再送出せず固定の500にする", async () => {
@@ -237,6 +253,7 @@ test("coreの例外を再送出せず固定の500にする", async () => {
     throw new Error("合成例外の秘密文字列");
   });
   await expectError(await POST(request()), "internal_error");
+  expectLogged("exception");
 });
 
 test("検証に失敗した銘柄マスターでは、本文を読まずcoreも呼ばず固定の500にする", async () => {
@@ -248,6 +265,7 @@ test("検証に失敗した銘柄マスターでは、本文を読まずcoreも�
   const pull = vi.fn();
   const body = new ReadableStream<Uint8Array>({ pull }, { highWaterMark: 0 });
   await expectError(await POST(request(body)), "internal_error");
+  expectLogged("stock_master_invalid_sector");
   expect(pull).not.toHaveBeenCalled();
   expect(inspect).not.toHaveBeenCalled();
 });
