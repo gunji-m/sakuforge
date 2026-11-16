@@ -2,7 +2,7 @@
 
 import { Fragment, useState } from "react";
 import type { Aggregation, SectorComposition } from "./api-response";
-import { MESSAGES } from "./messages";
+import { MESSAGES, unknownIncluded } from "./messages";
 import { barRows, formatPercent, OTHER_COLOR, summarizeDonut } from "./sectors";
 
 type Axis = "sector17" | "sector33";
@@ -142,7 +142,14 @@ function Bars({
   );
 }
 
-export function SectorCharts({ aggregation }: { readonly aggregation: Aggregation }) {
+export function SectorCharts({
+  aggregation,
+  unknownCount,
+}: {
+  readonly aggregation: Aggregation;
+  /** Stock codes the stock master did not know; they are counted as unclassified (#160). */
+  readonly unknownCount: number;
+}) {
   const [axis, setAxis] = useState<Axis>("sector17");
   const composition = aggregation[axis];
   return (
@@ -175,6 +182,9 @@ export function SectorCharts({ aggregation }: { readonly aggregation: Aggregatio
             </div>
           </div>
         </div>
+        {composition.status === "computed" && unknownCount > 0 && (
+          <p className="figure-note">{unknownIncluded(unknownCount)}</p>
+        )}
         {composition.status === "computed" && (
           <Bars composition={composition} twoColumns={axis === "sector33"} />
         )}

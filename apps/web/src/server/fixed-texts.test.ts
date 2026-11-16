@@ -9,7 +9,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { FINDING_MESSAGES } from "@sakuforge/core";
 import { expect, test } from "vitest";
-import { MESSAGES, omittedFindings } from "../client/messages";
+import { MESSAGES, omittedFindings, unknownIncluded } from "../client/messages";
 import { TSE_STOCK_MASTER_SOURCE } from "./current-stock-master";
 import { ERRORS } from "./errors";
 
@@ -69,6 +69,7 @@ test("画面が持つ固定の文言は、それぞれ設計 6.5 の表のどれ
   }
   // The omitted-findings line carries a count, written as N in the table.
   expect(texts).toContain(omittedFindings(0).replace("0", "N"));
+  expect(texts).toContain(unknownIncluded(0).replace("0", "N"));
 });
 
 test("表の読み取りは、行の文言を縮めたり取り違えたりしたものを一致としない", () => {

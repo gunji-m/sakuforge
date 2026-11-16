@@ -7,6 +7,8 @@ export interface ShownResult {
   readonly aggregation: Aggregation;
   readonly stockMaster: StockMasterAttribution;
   readonly rowsScanned: number;
+  /** Stock codes the stock master did not know when imported; their rows are unclassified. */
+  readonly unknownCount: number;
   /** When the browser imported it, ISO 8601 in UTC. */
   readonly savedAt: string;
 }
@@ -61,6 +63,7 @@ function shown(stored: StoredResult): ShownResult {
     aggregation: stored.aggregation,
     stockMaster: stored.stockMaster,
     rowsScanned: stored.summary.rowsScanned,
+    unknownCount: stored.summary.unknownCount,
     savedAt: stored.savedAt,
   };
 }

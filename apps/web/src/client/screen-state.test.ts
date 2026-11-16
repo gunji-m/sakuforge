@@ -56,8 +56,17 @@ test("保存した結果が無ければ空、あれば最新の 1 件を表示�
     aggregation: aggregation(),
     stockMaster,
     rowsScanned: 3,
+    unknownCount: 0,
     savedAt,
   });
+});
+
+test("開き直した結果は、未知の証券コードの件数を持つ（無ければ 0）", () => {
+  const restored = reduce(INITIAL_STATE, { type: "restored", stored: stored(unknownCodes) });
+  expect(restored.result?.unknownCount).toBe(2);
+  expect(restored.notices).toEqual([]);
+  expect(finished(empty, unknownCodes).result?.unknownCount).toBe(2);
+  expect(shown.result?.unknownCount).toBe(0);
 });
 
 test("保存する結果は、集計・出典・取り込み日時・件数だけを持つ", () => {
@@ -86,7 +95,7 @@ test("集計できた応答で、今回の結果を表示する", () => {
     loaded: true,
     sending: false,
     notices: [],
-    result: { aggregation: aggregation(), stockMaster, rowsScanned: 3, savedAt },
+    result: { aggregation: aggregation(), stockMaster, rowsScanned: 3, unknownCount: 0, savedAt },
   });
 });
 
