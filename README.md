@@ -19,6 +19,8 @@
 
 Dependabot（月 1 回）が見るのは npm の依存と GitHub Actions だけ。Node（`.node-version` と Dev Container のイメージ）と pnpm（ルートの `package.json` の `packageManager`）は Dependabot が上げないので、Dependabot の PR を見るときに新しい版が出ていないかを確かめ、上げるときは Issue を立てて手で直す。Next.js のメジャー更新も Dependabot からは出ない（[ADR 0004](docs/decisions/0004-vercel-nextjs-server-side.md)）。`@types/node` のメジャー更新も出ないので、Node のメジャーを上げるときに一緒に上げる。
 
+依存の更新は、公開から 7 日たった版だけを入れる。Dependabot は 7 日たっていない版を PR にせず（`.github/dependabot.yml` の `cooldown`。脆弱性の修正の PR には掛からない）、pnpm は 7 日たっていない版を lockfile に入れずに失敗する（`pnpm-workspace.yaml` の `minimumReleaseAge`）。脆弱性の修正を急いで入れるときは、その更新で入る版だけ（一緒に上がる間接の依存も含む）を `minimumReleaseAgeExclude` に書いて外し、入れたら消す。
+
 ### ローカルで API を動かして確かめる
 
 開発サーバーを起動すると、ブラウザで `http://localhost:3000` を開いて CSV を選べる（評価額の合計、年間配当見込み、業種構成のドーナツと横棒が出て、結果はそのブラウザに保存される）。検査 API（`POST /api/inspect`）を直接確かめる手順は次のとおり。銘柄マスターは合成の 2 銘柄（`9A9A`、`9C9C`）で動く。

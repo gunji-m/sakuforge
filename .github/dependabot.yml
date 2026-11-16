@@ -4,6 +4,9 @@ updates:
     directory: "/"
     schedule:
       interval: monthly
+    # 公開から 7 日たっていない版は PR にしない（#141）。脆弱性の修正の PR には掛からない。
+    cooldown:
+      default-days: 7
     ignore:
       # Next.js のメジャーは固定する（ADR 0004）。上げるときは Issue を立てて行う。
       - dependency-name: next
@@ -31,6 +34,8 @@ updates:
     directory: "/"
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 7
     groups:
       actions-minor-patch:
         patterns:
