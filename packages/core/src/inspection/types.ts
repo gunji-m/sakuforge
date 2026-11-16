@@ -32,7 +32,7 @@ export const FINDING_MESSAGES = Object.freeze({
   current_price_invalid: "現在値を読み取れません。0以上の数値が必要です。",
   dividend_per_share_invalid: "予想1株配当を読み取れません。数値か範囲（例: 40 ~ 50）が必要です。",
   stock_code_unknown:
-    "銘柄マスターに無い証券コードがあります。該当銘柄は「未分類」として集計しました。",
+    "銘柄マスターに無い証券コードがあります。該当銘柄の業種は「未分類」として扱います。",
 } satisfies Record<FindingCode, string>);
 
 export const FINDING_FIELDS = Object.freeze([
