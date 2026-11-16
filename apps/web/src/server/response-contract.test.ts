@@ -7,6 +7,8 @@ import { DEFAULT_INSPECTION_LIMITS } from "@sakuforge/core";
 import { expect, test } from "vitest";
 import { POST } from "../../app/api/inspect/route";
 import {
+  MAX_FINDINGS,
+  MAX_UNKNOWN_CODES,
   parseApiError,
   parseInspectResponse,
   SUPPORTED_SCHEMA_VERSION,
@@ -111,4 +113,10 @@ test("画面が読む応答の版は、サーバー関数が返す版と同じ",
 
 test("画面が送る前に確かめる大きさの上限は、core の上限と同じ", () => {
   expect(MAX_CSV_BYTES).toBe(DEFAULT_INSPECTION_LIMITS.maxBytes);
+});
+
+test("画面が受け付ける所見と未知の証券コードの上限は、core の上限と同じ", () => {
+  expect(MAX_FINDINGS).toBe(DEFAULT_INSPECTION_LIMITS.maxReturnedFindings);
+  // Unknown codes are all returned (docs/design.md section 5), so at most one per data row.
+  expect(MAX_UNKNOWN_CODES).toBe(DEFAULT_INSPECTION_LIMITS.maxDataRows);
 });
