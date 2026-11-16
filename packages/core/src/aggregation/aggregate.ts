@@ -25,7 +25,7 @@ function readSector(
   const { code, name } = value as StockMasterSector;
   if (
     typeof code !== "string" ||
-    !(axis === "sector17" ? /^(?:[1-9]|1[0-7])$/ : /^[0-9]{1,4}$/).test(code) ||
+    !(axis === "sector17" ? /^(?:[1-9]|1[0-7])$/ : /^[1-9][0-9]{0,3}$/).test(code) ||
     code.trim() !== code ||
     typeof name !== "string"
   )
