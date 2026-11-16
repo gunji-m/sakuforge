@@ -94,6 +94,7 @@ test.each([
   "20261031",
   "2026-10-31T00:00:00Z",
   "2026-11-13",
+  "2026-11-30",
   "",
   null,
   20261031,
@@ -101,8 +102,38 @@ test.each([
   expect(reasonOf(master({ asOf }))).toBe("invalid_as_of");
 });
 
-test("基準日は当日まで受け付ける", () => {
-  expect(reasonOf(master({ asOf: "2026-11-12" }))).toBeNull();
+// 2024 is a leap year, so 2024-02-28 is not the month end.
+test.each(["2026-10-15", "2026-10-30", "2026-09-01", "2024-02-28"])(
+  "月末でない基準日 %s を invalid_as_of で拒否する",
+  (asOf) => {
+    expect(reasonOf(master({ asOf }))).toBe("invalid_as_of");
+  },
+);
+
+test.each([
+  ["2026-09-30", "2026-10-05T00:00:00Z"],
+  ["2026-02-28", "2026-03-02T00:00:00Z"],
+  ["2024-02-29", "2024-03-02T00:00:00Z"],
+  ["1999-01-31", "1999-02-03T00:00:00Z"],
+])("月末の基準日 %s を受け付ける（古くても止めない）", (asOf, fetchedAt) => {
+  expect(reasonOf(master({ asOf, fetchedAt }))).toBeNull();
+});
+
+test("基準日は、月末であれば当日まで受け付ける", () => {
+  const monthEnd = new Date("2026-10-31T00:00:00Z");
+  expect(
+    parseStockMaster(
+      master({ asOf: "2026-10-31", fetchedAt: "2026-10-31T00:00:00Z" }),
+      monthEnd,
+      relaxed,
+    ).kind,
+  ).toBe("loaded");
+});
+
+test("取得日時が基準日より前なら invalid_as_of で拒否し、同じ日なら受け付ける", () => {
+  expect(reasonOf(master({ fetchedAt: "2026-10-30T23:59:59Z" }))).toBe("invalid_as_of");
+  expect(reasonOf(master({ fetchedAt: "2020-01-01T00:00:00Z" }))).toBe("invalid_as_of");
+  expect(reasonOf(master({ fetchedAt: "2026-10-31T00:00:00Z" }))).toBeNull();
 });
 
 test("件数は下限ちょうど・上限ちょうどを受け付け、外側を拒否する", () => {
