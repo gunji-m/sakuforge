@@ -198,10 +198,22 @@ test("invalid master sectors reject aggregation after a successful inspection", 
 });
 
 test("successful and failed results never expose holding details or CSV content", () => {
-  for (const purchasePrice of ["2468.25", "-2468.25"]) {
-    const input = csv(cells({ 9: "7531", 10: purchasePrice, 11: "8642.75", 26: "37.125" }));
+  for (const holdingCount of ["7531", "-7531"]) {
+    const input = csv(cells({ 9: holdingCount, 10: "2468.25", 11: "8642.75", 26: "37.125" }));
     const result = inspectAndAggregateHoldingsCsv(input, master);
-    expect(result.kind).toBe(purchasePrice === "2468.25" ? "aggregated" : "inspection_failed");
+    expect(result.kind).toBe(holdingCount === "7531" ? "aggregated" : "inspection_failed");
     expectNoDetails(result, input);
   }
+});
+
+test("the purchase price column is not read: a bad value or a missing heading still aggregates", () => {
+  for (const purchasePrice of ["-2468.25", "-", "", "synthetic-secret-value"]) {
+    const input = csv(cells({ 9: "7531", 10: purchasePrice, 11: "8642.75", 26: "37.125" }));
+    const result = inspectAndAggregateHoldingsCsv(input, master);
+    expect(result.kind).toBe("aggregated");
+    expectNoDetails(result, input);
+  }
+  const withoutPurchasePrice =
+    "銘柄,銘柄,銘柄,銘柄,銘柄,銘柄,銘柄,保有株数,現在値,予想1株配当\n--,--,--,--,9A9A,--,--,100,1200,40";
+  expect(inspectAndAggregateHoldingsCsv(withoutPurchasePrice, master).kind).toBe("aggregated");
 });

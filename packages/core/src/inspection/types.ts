@@ -9,7 +9,6 @@ export const FINDING_CODES = Object.freeze([
   "stock_code_invalid",
   "stock_code_unsupported",
   "holding_count_invalid",
-  "purchase_price_invalid",
   "current_price_invalid",
   "dividend_per_share_invalid",
   "stock_code_unknown",
@@ -28,7 +27,6 @@ export const FINDING_MESSAGES = Object.freeze({
   stock_code_invalid: "証券コードを読み取れません。4文字の証券コードが必要です。",
   stock_code_unsupported: "5桁の証券コードには、まだ対応していません。",
   holding_count_invalid: "保有株数を読み取れません。0以上の数値が必要です。",
-  purchase_price_invalid: "取得単価を読み取れません。0以上の数値が必要です。",
   current_price_invalid: "現在値を読み取れません。0以上の数値が必要です。",
   dividend_per_share_invalid: "予想1株配当を読み取れません。数値か範囲（例: 40 ~ 50）が必要です。",
   stock_code_unknown:
@@ -38,7 +36,6 @@ export const FINDING_MESSAGES = Object.freeze({
 export const FINDING_FIELDS = Object.freeze([
   "stock_code",
   "holding_count",
-  "purchase_price",
   "current_price",
   "dividend_per_share",
 ] as const);
@@ -80,7 +77,6 @@ export const HOLDINGS_PROFILE = "domestic_cash_holdings_v1";
 export const HOLDINGS_COLUMNS = Object.freeze({
   stock_code: "銘柄",
   holding_count: "保有株数",
-  purchase_price: "取得単価",
   current_price: "現在値",
   dividend_per_share: "予想1株配当",
 } as const);

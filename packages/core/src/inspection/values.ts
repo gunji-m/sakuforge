@@ -96,7 +96,6 @@ export function checkHoldingsValues(
     }
     for (const [field, findingCode] of [
       ["holding_count", "holding_count_invalid"],
-      ["purchase_price", "purchase_price_invalid"],
       ["current_price", "current_price_invalid"],
     ] as const) {
       const column = columns[field] + 1;

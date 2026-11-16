@@ -125,7 +125,6 @@ test("reordered invalid values report their actual columns and stable fields", (
     createFinding("current_price_invalid", { row: 2, column: 2, field: "current_price" }),
     createFinding("holding_count_invalid", { row: 2, column: 3, field: "holding_count" }),
     createFinding("stock_code_invalid", { row: 2, column: 8, field: "stock_code" }),
-    createFinding("purchase_price_invalid", { row: 2, column: 11, field: "purchase_price" }),
   ]);
   expect(result.stockCodeMatch).toEqual({ status: "not_checked" });
 });
@@ -227,7 +226,6 @@ test.each([
   [5, "synthetic-secret-value", "stock_code_invalid", "stock_code"],
   [5, "99999", "stock_code_unsupported", "stock_code"],
   [9, "synthetic-secret-value", "holding_count_invalid", "holding_count"],
-  [10, "synthetic-secret-value", "purchase_price_invalid", "purchase_price"],
   [11, "synthetic-secret-value", "current_price_invalid", "current_price"],
   [26, "synthetic-secret-value", "dividend_per_share_invalid", "dividend_per_share"],
 ] as const)(
