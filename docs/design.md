@@ -385,8 +385,9 @@ stateDiagram-v2
 | すべての応答 | `Referrer-Policy` | `no-referrer` |
 | すべての応答 | `X-Frame-Options` | `DENY` |
 | すべての応答 | `X-Robots-Tag` | `noindex, nofollow` |
-| ページ | `Content-Security-Policy` | 応答ごとの nonce を付けた script と style、同じ出所の読み込みと通信だけを許す。inline のコードと `eval` は許さない |
+| ページ（存在しない path の 404 を含む） | `Content-Security-Policy` | 応答ごとの nonce を付けた script と style、同じ出所の読み込みと通信だけを許す。inline のコードと `eval` は許さない |
 | 検査 API | `Content-Security-Policy` | `default-src 'none'; frame-ancestors 'none'` |
+| 静的なアイコン（`/icon.svg`） | `Content-Security-Policy` | 検査 API と同じ値。ページ用の nonce 付きの値は付けない（#139） |
 
 - ページには `robots` の meta（`noindex, nofollow`）も入れる
 - nonce を応答ごとに変えるため、ページは要求のたびに描画する（静的に生成しない）
