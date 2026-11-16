@@ -1,6 +1,6 @@
 import type { HoldingsCsvResult } from "@sakuforge/core";
+import type { CurrentStockMasterRejectionReason } from "./current-stock-master";
 import { RESPONSE_SCHEMA_VERSION } from "./response";
-import type { StockMasterRejectionReason } from "./stock-master";
 
 export const ERRORS = {
   csv_too_large: {
@@ -44,7 +44,7 @@ type CoreRejection = Extract<HoldingsCsvResult, { kind: "rejected" | "aggregatio
  * the log line never carries CSV content, asset values, file names or exception text (#97).
  */
 export type InternalErrorReason =
-  | `stock_master_${StockMasterRejectionReason}`
+  | `stock_master_${CurrentStockMasterRejectionReason}`
   | `core_${CoreRejection["reason"]}`
   | "unexpected_result"
   | "exception";

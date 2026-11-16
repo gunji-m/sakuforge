@@ -1,5 +1,5 @@
-# 銘柄マスター JSON の置き場（リポジトリに入れない。docs/external-data-policy.md）
-/data/stock-master/
+# 銘柄マスター JSON の置き場（リポジトリに入れない。docs/external-data-policy.md）。build は apps/web/data/stock-master/ に置く
+**/data/stock-master/
 
 # 秘密情報
 .env*

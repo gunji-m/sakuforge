@@ -1,9 +1,11 @@
+import { PHASE_PRODUCTION_SERVER } from "next/constants";
 import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server";
 import { expect, test } from "vitest";
-import nextConfig from "../../next.config";
+import configFor from "../../next.config";
 import { config } from "../../proxy";
 import { API_CONTENT_SECURITY_POLICY } from "./security-headers";
 
+const nextConfig = configFor(PHASE_PRODUCTION_SERVER);
 const matches = (url: string) => unstable_doesMiddlewareMatch({ config, url, nextConfig });
 
 test.each(["/", "/nope", "/robots.txt", "/favicon.ico", "/icon.svg.bak"])(

@@ -1,8 +1,12 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 import * as core from "@sakuforge/core";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { POST } from "../../app/api/inspect/route";
 import * as currentStockMaster from "./current-stock-master";
 import { ERRORS } from "./errors";
+import { syntheticRealSizedMaster } from "./test-stock-master";
 
 const header =
   "銘柄,銘柄,銘柄,銘柄,銘柄,銘柄,銘柄,預り区分,保有株数,取得単価,現在値,現在値,評価損益,評価損益(%),買付金額,評価額,前日終値,前日比,前日比(%),評価額前日比,予想PER(倍),実績PBR(倍),予想配当利回り(%),予想EPS,実績BPS,予想1株配当";
@@ -409,4 +413,40 @@ test("coreが項目を足しても、決めた項目だけを応答に写す", a
   const body = await responseBody(response);
   expect(hasKey(body, "records")).toBe(false);
   expect(hasKey(body, "rows")).toBe(false);
+});
+
+test("本番では、配備物の銘柄マスターを読み、応答に東証の出典と JSON の基準日を付ける", async () => {
+  const root = mkdtempSync(join(tmpdir(), "sakuforge-route-"));
+  try {
+    mkdirSync(join(root, dirname(currentStockMaster.REAL_STOCK_MASTER_FILE)), { recursive: true });
+    writeFileSync(
+      join(root, currentStockMaster.REAL_STOCK_MASTER_FILE),
+      JSON.stringify(syntheticRealSizedMaster("2026-09-30")),
+    );
+    vi.stubEnv("VERCEL_ENV", "production");
+    vi.spyOn(process, "cwd").mockReturnValue(root);
+    const response = await POST(request());
+    expect(response.status).toBe(200);
+    const body = await responseBody(response);
+    expect(body).toMatchObject({
+      stockMaster: { source: "株式会社東京証券取引所「東証上場銘柄一覧」", asOf: "2026-09-30" },
+    });
+    expectLogged(null);
+  } finally {
+    vi.unstubAllEnvs();
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("本番で配備物の銘柄マスターが無いときは、合成へ落とさず固定の500にする", async () => {
+  const root = mkdtempSync(join(tmpdir(), "sakuforge-route-"));
+  try {
+    vi.stubEnv("VERCEL_ENV", "production");
+    vi.spyOn(process, "cwd").mockReturnValue(root);
+    await expectError(await POST(request()), "internal_error");
+    expectLogged("stock_master_unreadable");
+  } finally {
+    vi.unstubAllEnvs();
+    rmSync(root, { recursive: true, force: true });
+  }
 });
