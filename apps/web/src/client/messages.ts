@@ -1,5 +1,6 @@
 /** Fixed texts the screen owns (docs/design.md 6.5). API messages are shown as received. */
 export const MESSAGES = {
+  noScript: "この画面を使うには、ブラウザで JavaScript を有効にしてください。",
   emptyHeading: "保有資産のCSVを選んでください",
   sending: "CSVを検査しています…",
   notComputable: "評価額の合計が 0 のため、構成を計算できません。",
