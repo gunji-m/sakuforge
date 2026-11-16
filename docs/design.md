@@ -426,7 +426,7 @@ stateDiagram-v2
       {
         "code": "stock_code_unknown",
         "severity": "warning",
-        "message": "銘柄マスターに無い証券コードがあります。該当銘柄は「未分類」として集計しました。"
+        "message": "銘柄マスターに無い証券コードがあります。該当銘柄の業種は「未分類」として扱います。"
       }
     ],
     "errorCount": 0,

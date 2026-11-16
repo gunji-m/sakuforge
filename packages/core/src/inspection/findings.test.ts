@@ -24,7 +24,7 @@ test("all 13 fixed messages and their order match domain-rules section 6", () =>
     ],
     [
       "stock_code_unknown",
-      "銘柄マスターに無い証券コードがあります。該当銘柄は「未分類」として集計しました。",
+      "銘柄マスターに無い証券コードがあります。該当銘柄の業種は「未分類」として扱います。",
     ],
   ];
   expect(FINDING_CODES.map((code) => [code, FINDING_MESSAGES[code]])).toEqual(expected);
