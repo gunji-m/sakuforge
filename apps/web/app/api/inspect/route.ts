@@ -1,6 +1,6 @@
 import { DEFAULT_INSPECTION_LIMITS, inspectAndAggregateHoldingsCsv } from "@sakuforge/core";
 import { loadCurrentStockMaster } from "../../../src/server/current-stock-master";
-import { errorResponse } from "../../../src/server/errors";
+import { errorResponse, internalError } from "../../../src/server/errors";
 import { readBody } from "../../../src/server/read-body";
 import { aggregatedResponse, inspectionFailedResponse } from "../../../src/server/response";
 
@@ -16,7 +16,7 @@ export async function POST(request: Request): Promise<Response> {
 
     // Never hand the core a stock master that failed validation, and never read the body for it.
     const loaded = loadCurrentStockMaster(new Date());
-    if (loaded.kind !== "loaded") return errorResponse("internal_error");
+    if (loaded.kind !== "loaded") return internalError(`stock_master_${loaded.reason}`);
     let body: Awaited<ReturnType<typeof readBody>>;
     try {
       body = await readBody(request.body, DEFAULT_INSPECTION_LIMITS.maxBytes);
@@ -40,12 +40,14 @@ export async function POST(request: Request): Promise<Response> {
           case "maxColumns":
             return errorResponse("csv_too_many_columns");
           default:
-            return errorResponse("internal_error");
+            return internalError(`core_${result.reason}`);
         }
+      case "aggregation_rejected":
+        return internalError(`core_${result.reason}`);
       default:
-        return errorResponse("internal_error");
+        return internalError("unexpected_result");
     }
   } catch {
-    return errorResponse("internal_error");
+    return internalError("exception");
   }
 }
