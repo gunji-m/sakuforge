@@ -7,7 +7,7 @@
   },
   "type": "module",
   "scripts": {
-    "build": "next build",
+    "build": "node scripts/fetch-stock-master.mjs && next build",
     "dev": "next dev"
   },
   "dependencies": {

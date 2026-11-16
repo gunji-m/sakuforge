@@ -75,8 +75,8 @@ pnpm workspace は次の2つのパッケージで構成します。
 
 銘柄マスター JSON を生成する道具（取得と変換のスクリプト、定期実行の設定）は、非公開のリポジトリに置き、
 このリポジトリには置きません（[4](#4-銘柄マスター-json-の流れ)）。東証の Excel を読む依存を、公開するアプリの
-lockfile に入れないためです。`.gitignore` の `data/stock-master/` は、build のときに取得した JSON の置き場で、
-リポジトリに入れません。
+lockfile に入れないためです。`.gitignore` の `data/stock-master/` は、build のときに取得した JSON の置き場
+（`apps/web/data/stock-master/stock-master.json`）で、リポジトリに入れません。
 
 ## 4. 銘柄マスター JSON の流れ
 
@@ -193,9 +193,25 @@ JSON と生成の道具は非公開のリポジトリに置き、このリポジ
 | 本番（Vercel の Production） | 本物 |
 | Preview、手元、CI | 合成（`apps/web/src/server/synthetic-stock-master.ts`）。本物を渡さない |
 
+見分けは、Vercel が付ける環境変数 `VERCEL_ENV` が `production` かどうかだけで行います（#113）。
+
+| 段階 | 本番（`VERCEL_ENV=production`） | 本番以外 |
+| --- | --- | --- |
+| build の前（`apps/web/scripts/fetch-stock-master.mjs`） | 依存を足さず Node の標準の `fetch` で JSON を取得し、JSON として読めることだけを確かめて `apps/web/data/stock-master/stock-master.json` に書く。設定が無い・取得できない・JSON でないときは build を失敗させる | 何もしない |
+| build（`apps/web/next.config.ts`） | 書いた JSON を、サーバー関数と同じ `parseStockMaster`（既定の上限）で検証する。無い・検証に失敗したときは build を失敗させる。合成へ落とさない。JSON はサーバー関数にだけ含める（`outputFileTracingIncludes`） | 何もしない |
+| サーバー関数 | 要求のたびに配備物の JSON を読み、検証し直す。読めない・検証に失敗したときは `internal_error`（理由は `stock_master_unreadable` など）。出典は東証、基準日は JSON の `asOf` | 合成（件数の下限だけ 1） |
+
+build と関数が出すのは固定の理由の語だけで、トークン、URL、JSON の中身、例外の文字列を出しません。
+要求ごとの読み込みと検証は、合成データで 4,500 件で約 8 ms、20,000 件で約 50 ms でした（2026-11-16、手元）。
+CSV の検査に比べて小さいので、読み込みの回数は減らしていません。
+
 ### 4.6 秘密
 
 - 非公開のリポジトリを読むトークンは、Vercel の環境変数に置く。1 つのリポジトリの内容を読むだけに絞る
+- Vercel の環境変数は 2 つで、どちらも Production だけに、Type は Secret で登録する（#113）
+  - `STOCK_MASTER_TOKEN`：読み取り専用のトークン（対象は非公開のリポジトリ 1 つ、Contents: Read-only）
+  - `STOCK_MASTER_URL`：JSON の GitHub の contents API の URL（`https://api.github.com/repos/` で始まるものだけを受け付ける。
+    非公開のリポジトリの名前を含むので、これも書かない）
 - Deploy Hook の URL は、非公開のリポジトリの secret に置く
 - どちらも、リポジトリ・ログ・Issue・PR に書かない。期限と入れ替えの手順は、配備の運用手順に書く（#44 の「3. 載せる」）
 
