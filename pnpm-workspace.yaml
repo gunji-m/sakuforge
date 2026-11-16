@@ -1,3 +1,7 @@
 packages:
   - "apps/*"
   - "packages/*"
+
+# 公開から 7 日（10,080 分）たっていない版は入れない（#141）。急ぐ脆弱性の修正だけ、
+# minimumReleaseAgeExclude にその更新で入る版（間接の依存も含む）を書いて外し、入れたら消す。
+minimumReleaseAge: 10080
