@@ -79,8 +79,10 @@ export interface ApiError {
 }
 
 const MAX_TEXT = 200;
-const MAX_FINDINGS = 200;
-const MAX_UNKNOWN_CODES = 10000;
+/** The most findings an answer carries. Copied from the core's `maxReturnedFindings`. */
+export const MAX_FINDINGS = 200;
+/** The most unknown codes an answer carries: all of them, so the core's `maxDataRows`. */
+export const MAX_UNKNOWN_CODES = 10000;
 const MAX_SECTORS = 100;
 
 type Json = Readonly<Record<string, unknown>>;
