@@ -222,6 +222,10 @@ export function Dashboard() {
         )}
       </header>
       <main className="main">
+        {/* Shown only when JavaScript does not run, where nothing else on the page can work. */}
+        <noscript>
+          <p className="notice notice-title">{MESSAGES.noScript}</p>
+        </noscript>
         {sending && (
           <p className="sending" role="status">
             {MESSAGES.sending}
