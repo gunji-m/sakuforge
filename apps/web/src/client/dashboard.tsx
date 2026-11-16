@@ -258,7 +258,7 @@ export function Dashboard() {
         {result !== null && (
           <>
             <Figures result={result} />
-            <SectorCharts aggregation={result.aggregation} />
+            <SectorCharts aggregation={result.aggregation} unknownCount={result.unknownCount} />
           </>
         )}
       </main>

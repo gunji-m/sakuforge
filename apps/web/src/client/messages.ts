@@ -27,3 +27,8 @@ export const MESSAGES = {
 export function omittedFindings(count: number): string {
   return `ほかに ${count} 件あります。`;
 }
+
+/** The line by the bar list when the shown result had stock codes the stock master did not know. */
+export function unknownIncluded(count: number): string {
+  return `未分類には、銘柄マスターに無い証券コードの銘柄（${count} 件）を含みます。`;
+}
