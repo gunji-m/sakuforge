@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import "../src/fonts/noto-sans-jp/noto-sans-jp.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
