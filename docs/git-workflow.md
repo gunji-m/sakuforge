@@ -25,6 +25,21 @@ GitHub の branch protection／ruleset で`main`を守ります。
 - PR必須
 - 必須checkはCIの`validate`。merge前にbranchが最新の`main`を含むことも求める（[4](#4-merge-commitとmain確認)の手順で追いつかせる）
 
+### GitHubの設定の実態（2026-11-17、本人がSettingsの画面で確認）
+
+| 設定 | 状態 |
+| --- | --- |
+| `main`の ruleset（`main:prtct`） | Active。対象は default branch（`main`）、bypass list は空。Restrict deletions、Block force pushes、Require a pull request before merging（許す merge の方法は Merge だけ）、Require status checks to pass（必須 check は `validate`、Require branches to be up to date before merging も有効） |
+| secret scanning（Secret Protection） | 有効 |
+| push protection | 有効 |
+| Dependency graph、Automatic dependency submission | 有効 |
+| Dependabot alerts、Malware alerts | 有効 |
+| Dependabot security updates | 有効。Grouped security updates は無効（グループ化は`.github/dependabot.yml`で行う） |
+| Private vulnerability reporting | 有効（[`SECURITY.md`](../SECURITY.md)が案内する連絡先） |
+| Security policy、Security advisories | 有効 |
+| code scanning（CodeQL） | 未設定 |
+| AI Scan の 3 項目（Preview） | 無効 |
+
 ## Branch命名
 
 branch名は`<type>/<issue-number>-<short-description>`とします。
