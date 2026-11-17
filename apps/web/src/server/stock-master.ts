@@ -73,6 +73,25 @@ function monthEndTime(text: string, now: Date): number | null {
     : null;
 }
 
+/** The time of a fetch time (`YYYY-MM-DDTHH:MM:SSZ`) that is a real date and time. Otherwise null. */
+function realDateTime(text: string): number | null {
+  const match = /^([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9]{2})Z$/.exec(text);
+  if (match === null) return null;
+  const parts = match.slice(1).map(Number);
+  const [year = 0, month = 0, day = 0, hour = 0, minute = 0, second = 0] = parts;
+  const time = Date.UTC(year, month - 1, day, hour, minute, second);
+  const date = new Date(time);
+  // Date.UTC rolls over values such as 02-30 or 24:00, so compare every part.
+  return date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day &&
+    date.getUTCHours() === hour &&
+    date.getUTCMinutes() === minute &&
+    date.getUTCSeconds() === second
+    ? time
+    : null;
+}
+
 function rejected(reason: StockMasterRejectionReason): StockMasterResult {
   return { kind: "rejected", reason };
 }
@@ -105,19 +124,19 @@ export function parseStockMaster(
     const { asOf, fetchedAt, sourceSha256, stocks } = value;
     if (
       typeof fetchedAt !== "string" ||
-      !/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$/.test(fetchedAt) ||
-      Number.isNaN(Date.parse(fetchedAt)) ||
       typeof sourceSha256 !== "string" ||
       !/^[0-9a-f]{64}$/.test(sourceSha256) ||
       !Array.isArray(stocks)
     ) {
       return rejected("invalid_shape");
     }
+    const fetchedTime = realDateTime(fetchedAt);
+    if (fetchedTime === null) return rejected("invalid_shape");
     if (typeof asOf !== "string") return rejected("invalid_as_of");
     const asOfTime = monthEndTime(asOf, now);
     if (asOfTime === null) return rejected("invalid_as_of");
-    // The data cannot have been fetched before the day it is as of.
-    if (Date.parse(fetchedAt) < asOfTime) return rejected("invalid_as_of");
+    // The data cannot have been fetched before the day it is as of, nor after now.
+    if (fetchedTime < asOfTime || fetchedTime > now.getTime()) return rejected("invalid_as_of");
     if (stocks.length < limits.minStocks || stocks.length > limits.maxStocks) {
       return rejected("stock_count_out_of_range");
     }
