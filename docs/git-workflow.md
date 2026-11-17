@@ -38,6 +38,9 @@ branch名は`<type>/<issue-number>-<short-description>`とします。
 | `test` | テストだけの変更 | `test/15-upload-boundary` |
 | `chore` | 依存、CI、保守作業 | `chore/16-ci` |
 
+クラウドの実行環境で作業するagentも、この名前でbranchを作成します。実行環境が付ける名前（`claude/...`など）は
+使わず、例外は作りません。
+
 原則として1 branch／1 PRは1 Issueだけを扱います。進行Issueを直接実装単位にせず、実際の変更を追跡する
 Issue番号を使用します。無関係な修正を同じbranchへ混ぜません。
 
