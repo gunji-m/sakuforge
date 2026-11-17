@@ -33,5 +33,5 @@
 
 ### このリポジトリの補足
 
-- 確認なしで進めてよい範囲：Issue の完了条件の中での `packages/core` の実装とテスト、合成データによるテスト、規則を変えない文書の修正、Issue の状態とコメントの更新
+- 確認なしで進めてよい範囲：Issue の完了条件の中での `packages/core` の実装とテスト、Issue の完了条件の中での `apps/web` の実装とテスト（画面の表示・部品・CSS・文言、応答の読み取り。サーバー関数、応答ヘッダーと CSP、ブラウザへの保存は `AGENTS.md` の Human approval に当たる）、合成データによるテスト、規則を変えない文書の修正、Issue の状態とコメントの更新
 - branch、PR、merge の規則は [`docs/git-workflow.md`](git-workflow.md) にある。
