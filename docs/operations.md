@@ -34,13 +34,14 @@ Vercel に載せたアプリを、確かめる・公開する・止める・戻�
 CSV を送っても保護に止められます。関数を確かめるときは、合鍵（5.3）をヘッダーに付けて `curl` で送ります。
 
 ```bash
-curl -s -X POST \
+curl -s -i -X POST \
   -H "Content-Type: text/csv" \
   -H "x-vercel-protection-bypass: $(cat local-data/vercel-bypass.txt)" \
   --data-binary @<合成の CSV> \
   "<配備ごとの URL>/api/inspect"
 ```
 
+- `-i` で応答ヘッダーも出します。ページや静的ファイルは、`-X POST` と本文を外した `GET` で同じように確かめます
 - 送る CSV は合成データにします。実際の CSV を送るときは、応答を手元で絞り、表示も記録もしません（#113）
 - 確かめること：応答の `x-vercel-id` が `hnd1::hnd1::…`（受け付けも処理も東京）、`docs/design.md` 7.1 のヘッダーと
   `X-Robots-Tag: noindex, nofollow`、検査の結果
