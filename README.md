@@ -17,7 +17,7 @@
 
 `node_modules` はコンテナ専用の volume に置くので、手元の `node_modules` とは混ざらない。Next.js の開発サーバーの port 3000 は手元へ転送し、Next.js の匿名テレメトリーは止めてある（`NEXT_TELEMETRY_DISABLED=1`）。Node の版を上げるときは、`.node-version` とイメージのタグ・digest を一緒に直す。`.node-version`、イメージのタグ、ルートと `apps/web` の `package.json` の `engines.node`（メジャー版）が一致することは、`apps/web/src/node-version.test.ts` が確かめる。
 
-Dependabot（月 1 回）が見るのは npm の依存と GitHub Actions だけ。Node（`.node-version` と Dev Container のイメージ）と pnpm（ルートの `package.json` の `packageManager`）は Dependabot が上げないので、Dependabot の PR を見るときに新しい版が出ていないかを確かめ、上げるときは Issue を立てて手で直す。Next.js のメジャー更新も Dependabot からは出ない（[ADR 0004](docs/decisions/0004-vercel-nextjs-server-side.md)）。`@types/node` のメジャー更新も出ないので、Node のメジャーを上げるときに一緒に上げる。
+Dependabot（月 1 回）が見るのは npm の依存と GitHub Actions だけ。Node（`.node-version` と Dev Container のイメージ）と pnpm（ルートの `package.json` の `packageManager`）は Dependabot が上げないので、Dependabot の PR を見るときに新しい版が出ていないかを確かめ、上げるときは Issue を立てて手で直す。Next.js のメジャー更新も Dependabot からは出ない（[ADR 0004](docs/decisions/0004-vercel-nextjs-server-side.md)）。`@types/node` のメジャー更新も出ないので、Node のメジャーを上げるときに一緒に上げる。Next.js・書体を上げるとき（Dependabot の PR を含む）と、ブラウザへ配る JS に入る依存を足すときは、第三者のライセンスの表示（`apps/web/public/third-party-notices.txt`、[docs/design.md](docs/design.md) の 6.7）の版と文面を見直す。
 
 依存の更新は、公開から 7 日たった版だけを入れる。Dependabot は 7 日たっていない版を PR にせず（`.github/dependabot.yml` の `cooldown`。脆弱性の修正の PR には掛からない）、pnpm は 7 日たっていない版を lockfile に入れずに失敗する（`pnpm-workspace.yaml` の `minimumReleaseAge`）。脆弱性の修正を急いで入れるときは、その更新で入る版だけ（一緒に上がる間接の依存も含む）を `minimumReleaseAgeExclude` に書いて外し、入れたら消す。
 
