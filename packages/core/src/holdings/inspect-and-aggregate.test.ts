@@ -156,6 +156,47 @@ test("duplicate stock codes sum every row into one sector per axis", () => {
   }
 });
 
+test("a dividend of `--` adds 0 to both dividend bounds and keeps the row in the composition", () => {
+  const input = csv(
+    cells({ 9: "2", 11: "100", 26: "3 ~ 5" }),
+    cells({ 5: "9C9C", 9: "3", 11: "200", 26: " -- " }),
+  );
+  const result = inspectAndAggregateHoldingsCsv(input, master);
+  expect(result.kind).toBe("aggregated");
+  if (result.kind !== "aggregated") return;
+  expect(result.inspection).toEqual(inspectionOf(input, master));
+  expect(result.inspection.findings).toEqual([]);
+  expect(result.aggregation.totalAssetValue).toBe("800");
+  expect(result.aggregation.annualDividend).toEqual({ lower: "6", upper: "10" });
+  for (const axis of ["sector17", "sector33"] as const) {
+    expect(result.aggregation[axis]).toEqual({
+      status: "computed",
+      sectors: [
+        { code: "2", name: "合成業種2", ratio: "75.00", held: true },
+        { code: "1", name: "合成業種1", ratio: "25.00", held: true },
+      ],
+    });
+  }
+});
+
+test.each(["-", "", "---", "-- ~ 10"])(
+  "a dividend of %j stays dividend_per_share_invalid",
+  (value) => {
+    const input = csv(cells({ 9: "2", 11: "100", 26: value }));
+    const result = inspectAndAggregateHoldingsCsv(input, master);
+    expect(result.kind).toBe("inspection_failed");
+    if (result.kind !== "inspection_failed") return;
+    expect(result.inspection.findings).toEqual([
+      expect.objectContaining({
+        code: "dividend_per_share_invalid",
+        row: 2,
+        column: 26,
+        field: "dividend_per_share",
+      }),
+    ]);
+  },
+);
+
 test("zero prices or holding counts yield non-computable compositions", () => {
   const result = inspectAndAggregateHoldingsCsv(
     csv(cells({ 9: "2", 11: "0" }), cells({ 5: "9C9C", 9: "0", 11: "100" })),
