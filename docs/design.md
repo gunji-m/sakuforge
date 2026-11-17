@@ -286,7 +286,7 @@ CSV の検査に比べて小さいので、読み込みの回数は減らして�
 
 - 書体は Noto Sans JP をアプリに同梱し、実行時に外部へ読みに行かない（#115）。太さ 400 と 700 の woff2 を
   `unicode-range` ごとのかたまりに分けて `apps/web/src/fonts/noto-sans-jp/` に置き、`@font-face` で読む。
-  ブラウザは画面に出る文字を含むかたまりだけを、同じ出所から読む。書体のライセンスの表示は #73 で扱う
+  ブラウザは画面に出る文字を含むかたまりだけを、同じ出所から読む。書体のライセンスの表示は [6.7](#67-第三者のライセンスの表示) にある
 - 図（ドーナツ、横棒）は、まず SVG と CSS で描く。足りない場合は図表のライブラリを使ってよいが、信頼度の高い
   ものに限る（[入力を信用しない原則](input-trust-principles.md)の6節の採用基準を満たすこと）。依存を足すので、
   採用のときに本人の承認を得る。どのライブラリにするかは、要ると分かった時点で候補を比べて決める
@@ -345,6 +345,7 @@ stateDiagram-v2
 | 受け付ける CSV の条件（空の案内の下。証券会社の名前は出さない） | 使えるのは、国内株式（現物）の保有資産を、証券会社の画面から既定の設定のまま書き出したCSVです（先頭に「銘柄」の見出しが7つ並ぶ形）。書き出す項目を変えたCSVや、形の違うCSVは取り込めないことがあります。 |
 | 保存の説明 | 結果はこのブラウザにだけ保存します。別の端末や別のブラウザでは表示されません。 |
 | 免責（ダッシュボードの下に常に出す） | SakuForge は投資助言を提供しません。計算結果の正確性・完全性は保証しません。 |
+| 免責の横の、第三者のライセンスの表示への導線（[6.7](#67-第三者のライセンスの表示)） | ライセンス |
 | 送信中 | CSVを検査しています… |
 | 送る前の確認：ファイル名 | CSVファイル（.csv）を選んでください。 |
 | 送る前の確認：大きさ | CSVが大きすぎます。4 MiB以下のファイルを選んでください。 |
@@ -382,6 +383,27 @@ stateDiagram-v2
 | 図の色 | 地に対して 3:1 に届かない区分の色がある（最小 2.3:1）。区分の情報は凡例と横棒の文字で読めるので、基準のとおり色だけに頼っていない |
 | キーボード | 空の状態は「CSV を選ぶ」に、表示の状態は「保存した結果を消す」「CSV を取り込む」、未知の証券コードの一覧の開閉、通知を閉じる、17／33 業種の切替に Tab で届く。切替は Enter、閉じるは Space で動き、どの部品もフォーカスの枠が見える |
 
+### 6.7 第三者のライセンスの表示
+
+ブラウザへ配るものに入る第三者の成果物の著作権表示と license の文面を、1 ファイル
+（`apps/web/public/third-party-notices.txt`。配備物の `/third-party-notices.txt`）にまとめ、免責の横の
+「ライセンス」から導く（#73、2026-11-17）。配る JS は圧縮で license の表示が落ちるため、この 1 ファイルで満たす。
+
+| 成果物 | 入り方 | license |
+| --- | --- | --- |
+| Next.js（client と Turbopack の runtime、`polyfill-module`） | 全ページの JS | MIT |
+| React・React DOM・`scheduler`・`react-server-dom-turbopack` | `next` の同梱版（`next/dist/compiled/`）。直接の依存の `react`・`react-dom` ではない | MIT |
+| `process` | `next` の同梱版 | MIT |
+| `@swc/helpers` | 全ページの JS（NOTICE ファイルは無い） | Apache-2.0 |
+| `polyfill-nomodule` の中の `core-js`・`whatwg-fetch`・`object-assign` | 全ページの HTML に `<script noModule>` で入る（古いブラウザだけが読む） | MIT |
+| Noto Sans JP（[6.4](#64-作り方)） | 同梱の woff2 | SIL Open Font License 1.1 |
+
+- 一覧は手で持つ。集める仕組みは段階 3 で決め直す。版と文面の置き場所はファイルの先頭にある
+- Next.js・書体を更新するとき、またはブラウザへ配る JS に入る依存を足すときは、この表とファイルを見直す。
+  `next` の版がファイルの一覧と食い違うと `apps/web/src/third-party-notices.test.ts` が失敗する
+- CSS と画像（`icon.svg`）は自分のものだけ。`decimal.js` と `packages/core` はサーバー関数の側だけで、ブラウザへ配らない
+- 東証データの出典と基準日は、画面のヘッダーに出す（[外部データとの約束](external-data-policy.md)の3節）
+
 ## 7. 層ごとの守りの分担
 
 守る対象ごとに、どの層が主に受け持ち、どの層が安全網になるかを決めます（#48、2026-11-07）。ここには
@@ -415,6 +437,7 @@ stateDiagram-v2
 | ページ（存在しない path の 404 を含む） | `Content-Security-Policy` | 応答ごとの nonce を付けた script と style、同じ出所の読み込みと通信だけを許す。inline のコードと `eval` は許さない |
 | 検査 API と、`/api/` の下の存在しない path の 404 | `Content-Security-Policy` | `default-src 'none'; frame-ancestors 'none'` |
 | 静的なアイコン（`/icon.svg`） | `Content-Security-Policy` | 検査 API と同じ値。ページ用の nonce 付きの値は付けない（#139） |
+| 第三者のライセンスの表示（`/third-party-notices.txt`） | `Content-Security-Policy` | 検査 API と同じ値。ページ用の nonce 付きの値は付けない（#73） |
 
 - ページには `robots` の meta（`noindex, nofollow`）も入れる
 - nonce を応答ごとに変えるため、ページは要求のたびに描画する（静的に生成しない）

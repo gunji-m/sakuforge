@@ -236,6 +236,10 @@ button,
   margin: 0;
 }
 
+.footer a {
+  color: inherit;
+}
+
 @media (max-width: 640px) {
   .header,
   .main {

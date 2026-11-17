@@ -265,7 +265,9 @@ export function Dashboard() {
       </main>
       <footer className="footer">
         {result !== null && <p>{MESSAGES.storageNote}</p>}
-        <p>{MESSAGES.disclaimer}</p>
+        <p>
+          {MESSAGES.disclaimer} <a href="/third-party-notices.txt">{MESSAGES.licenses}</a>
+        </p>
       </footer>
     </div>
   );
