@@ -243,6 +243,7 @@ export function Dashboard() {
           <section className="card empty">
             <h2>{MESSAGES.emptyHeading}</h2>
             <p>{MESSAGES.emptyGuide}</p>
+            <p className="figure-note">{MESSAGES.csvCondition}</p>
             <p className="figure-note">{MESSAGES.storageNote}</p>
             {chooser}
             {stored && (
@@ -264,7 +265,9 @@ export function Dashboard() {
       </main>
       <footer className="footer">
         {result !== null && <p>{MESSAGES.storageNote}</p>}
-        <p>{MESSAGES.disclaimer}</p>
+        <p>
+          {MESSAGES.disclaimer} <a href="/third-party-notices.txt">{MESSAGES.licenses}</a>
+        </p>
       </footer>
     </div>
   );

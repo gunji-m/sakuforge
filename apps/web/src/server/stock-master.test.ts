@@ -75,6 +75,11 @@ test.each([
   master({ stocks: ["9A9A"] }),
   master({ fetchedAt: "2026-11-05" }),
   master({ fetchedAt: "2026-13-05T00:00:00Z" }),
+  master({ fetchedAt: "2026-02-30T00:00:00Z" }),
+  master({ fetchedAt: "2026-10-31T24:00:00Z" }),
+  master({ fetchedAt: "2026-11-05T00:60:00Z" }),
+  master({ fetchedAt: "2026-11-05T00:00:60Z" }),
+  master({ fetchedAt: "2026-11-05T00:00:00.000Z" }),
   master({ fetchedAt: 0 }),
   master({ sourceSha256: "0".repeat(63) }),
   master({ sourceSha256: "G".repeat(64) }),
@@ -134,6 +139,12 @@ test("取得日時が基準日より前なら invalid_as_of で拒否し、同�
   expect(reasonOf(master({ fetchedAt: "2026-10-30T23:59:59Z" }))).toBe("invalid_as_of");
   expect(reasonOf(master({ fetchedAt: "2020-01-01T00:00:00Z" }))).toBe("invalid_as_of");
   expect(reasonOf(master({ fetchedAt: "2026-10-31T00:00:00Z" }))).toBeNull();
+});
+
+test("取得日時が現在より後なら invalid_as_of で拒否し、現在ちょうどなら受け付ける", () => {
+  expect(reasonOf(master({ fetchedAt: "2026-11-12T00:00:01Z" }))).toBe("invalid_as_of");
+  expect(reasonOf(master({ fetchedAt: "2027-01-01T00:00:00Z" }))).toBe("invalid_as_of");
+  expect(reasonOf(master({ fetchedAt: "2026-11-12T00:00:00Z" }))).toBeNull();
 });
 
 test("件数は下限ちょうど・上限ちょうどを受け付け、外側を拒否する", () => {
