@@ -243,6 +243,7 @@ export function Dashboard() {
           <section className="card empty">
             <h2>{MESSAGES.emptyHeading}</h2>
             <p>{MESSAGES.emptyGuide}</p>
+            <p className="figure-note">{MESSAGES.csvCondition}</p>
             <p className="figure-note">{MESSAGES.storageNote}</p>
             {chooser}
             {stored && (

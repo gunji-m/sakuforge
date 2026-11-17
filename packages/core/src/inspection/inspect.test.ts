@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { createFinding } from "./findings";
-import { inspectHoldingsCsv } from "./inspect";
+import { inspectHoldingsCsvWithRecords } from "./inspect";
 import { checkCsvStructure } from "./structure";
 import {
   DEFAULT_INSPECTION_LIMITS,
@@ -8,9 +8,20 @@ import {
   HOLDINGS_PROFILE,
   type HoldingsInspection,
   type InspectionLimits,
+  type LimitRejection,
   type StockMaster,
   type StockMasterEntry,
 } from "./types";
+
+/** The inspection without the internal records and columns, or the rejection unchanged. */
+function inspectionOf(
+  input: Uint8Array | string,
+  stockMaster: StockMaster,
+  overrides?: Partial<InspectionLimits>,
+): LimitRejection | HoldingsInspection {
+  const result = inspectHoldingsCsvWithRecords(input, stockMaster, overrides);
+  return "kind" in result ? result : result.inspection;
+}
 
 const header =
   "銘柄,銘柄,銘柄,銘柄,銘柄,銘柄,銘柄,預り区分,保有株数,取得単価,現在値,現在値,評価損益,評価損益(%),買付金額,評価額,前日終値,前日比,前日比(%),評価額前日比,予想PER(倍),実績PBR(倍),予想配当利回り(%),予想EPS,実績BPS,予想1株配当";
@@ -48,7 +59,7 @@ function inspected(
   stockMaster: StockMaster = master,
   limits?: Partial<InspectionLimits>,
 ): HoldingsInspection {
-  const result = inspectHoldingsCsv(input, stockMaster, limits);
+  const result = inspectionOf(input, stockMaster, limits);
   if (result.kind !== "inspection") throw new Error("Expected inspection result");
   expect(result).not.toHaveProperty("records");
   expect(result).not.toHaveProperty("columns");
@@ -464,7 +475,7 @@ test("failed master membership checks return a fixed rejection without exception
     new Proxy(new Map(), {}),
     Object.create(Map.prototype),
   ]) {
-    expect(inspectHoldingsCsv(csv(cells()), stockMaster)).toEqual({
+    expect(inspectionOf(csv(cells()), stockMaster)).toEqual({
       kind: "rejected",
       reason: "invalid_stock_master",
     });
@@ -520,14 +531,14 @@ test.each([
 ] as const)("structure rejections pass through unchanged", (input, limits) => {
   const expected = checkCsvStructure(input as never, limits);
   expect(expected.kind).toBe("rejected");
-  expect(inspectHoldingsCsv(input as never, master, limits)).toEqual(expected);
+  expect(inspectionOf(input as never, master, limits)).toEqual(expected);
 });
 
 test.each([-1, 0.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1])(
   "invalid limit %s is not masked by the internal full findings limit",
   (value) => {
     for (const key of Object.keys(DEFAULT_INSPECTION_LIMITS)) {
-      expect(inspectHoldingsCsv(csv(cells()), master, { [key]: value })).toEqual({
+      expect(inspectionOf(csv(cells()), master, { [key]: value })).toEqual({
         kind: "rejected",
         reason: "invalid_limits",
       });
@@ -536,7 +547,7 @@ test.each([-1, 0.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGE
 );
 
 test.each([null, 1, "invalid"])("invalid overrides %j return a fixed rejection", (limits) => {
-  expect(inspectHoldingsCsv(csv(cells()), master, limits as never)).toEqual({
+  expect(inspectionOf(csv(cells()), master, limits as never)).toEqual({
     kind: "rejected",
     reason: "invalid_limits",
   });
@@ -545,7 +556,7 @@ test.each([null, 1, "invalid"])("invalid overrides %j return a fixed rejection",
 test.each([{}, null, undefined, [], new Set()])(
   "non-Map master returns a fixed rejection",
   (value) => {
-    expect(inspectHoldingsCsv(csv(cells()), value as never)).toEqual({
+    expect(inspectionOf(csv(cells()), value as never)).toEqual({
       kind: "rejected",
       reason: "invalid_stock_master",
     });

@@ -12,15 +12,6 @@ import {
 } from "./types";
 import { checkHoldingsValues } from "./values";
 
-export function inspectHoldingsCsv(
-  input: Uint8Array | string,
-  stockMaster: StockMaster,
-  overrides: Partial<InspectionLimits> = {},
-): LimitRejection | HoldingsInspection {
-  const result = inspectHoldingsCsvWithRecords(input, stockMaster, overrides);
-  return "kind" in result ? result : result.inspection;
-}
-
 /** Internal intermediate data. Never expose records or columns in public results. */
 export function inspectHoldingsCsvWithRecords(
   input: Uint8Array | string,

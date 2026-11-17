@@ -2,8 +2,24 @@ import { expect, test } from "vitest";
 import { aggregateHoldings } from "../aggregation/aggregate";
 import type { HoldingRow } from "../aggregation/types";
 import { type HoldingsCsvResult, inspectAndAggregateHoldingsCsv } from "../index";
-import { inspectHoldingsCsv } from "../inspection/inspect";
-import type { StockMaster, StockMasterEntry } from "../inspection/types";
+import { inspectHoldingsCsvWithRecords } from "../inspection/inspect";
+import type {
+  HoldingsInspection,
+  InspectionLimits,
+  LimitRejection,
+  StockMaster,
+  StockMasterEntry,
+} from "../inspection/types";
+
+/** The inspection without the internal records and columns, or the rejection unchanged. */
+function inspectionOf(
+  input: Uint8Array | string,
+  stockMaster: StockMaster,
+  overrides?: Partial<InspectionLimits>,
+): LimitRejection | HoldingsInspection {
+  const result = inspectHoldingsCsvWithRecords(input, stockMaster, overrides);
+  return "kind" in result ? result : result.inspection;
+}
 
 const header =
   "銘柄,銘柄,銘柄,銘柄,銘柄,銘柄,銘柄,預り区分,保有株数,取得単価,現在値,現在値,評価損益,評価損益(%),買付金額,評価額,前日終値,前日比,前日比(%),評価額前日比,予想PER(倍),実績PBR(倍),予想配当利回り(%),予想EPS,実績BPS,予想1株配当";
@@ -89,7 +105,7 @@ test("fifth stock cells match direct inspection and aggregation with unchanged c
   const result = inspectAndAggregateHoldingsCsv(input, master);
   expect(result.kind).toBe("aggregated");
   if (result.kind !== "aggregated") return;
-  expect(result.inspection).toEqual(inspectHoldingsCsv(input, master));
+  expect(result.inspection).toEqual(inspectionOf(input, master));
   expect(result.aggregation).toEqual(aggregateHoldings(rows, master));
 });
 
@@ -98,7 +114,7 @@ test("unknown stock codes remain valid with a warning and aggregate as unclassif
   const result = inspectAndAggregateHoldingsCsv(input, master);
   expect(result.kind).toBe("aggregated");
   if (result.kind !== "aggregated") return;
-  expect(result.inspection).toEqual(inspectHoldingsCsv(input, master));
+  expect(result.inspection).toEqual(inspectionOf(input, master));
   expect(result.inspection.valid).toBe(true);
   expect(result.inspection.findings).toEqual([
     expect.objectContaining({ code: "stock_code_unknown", severity: "warning" }),
@@ -158,7 +174,7 @@ test("invalid values return only the failed inspection", () => {
   const result = inspectAndAggregateHoldingsCsv(input, master);
   expect(result).toEqual({
     kind: "inspection_failed",
-    inspection: inspectHoldingsCsv(input, master),
+    inspection: inspectionOf(input, master),
   });
   expect(result).not.toHaveProperty("aggregation");
 });
@@ -178,7 +194,7 @@ test("byte limit overrides return the inspection rejection without inspection or
   const overrides = { maxBytes: 1 };
   const result = inspectAndAggregateHoldingsCsv(input, master, overrides);
   expect(result).toEqual({ kind: "rejected", reason: "maxBytes" });
-  expect(result).toEqual(inspectHoldingsCsv(input, master, overrides));
+  expect(result).toEqual(inspectionOf(input, master, overrides));
   expect(result).not.toHaveProperty("inspection");
   expect(result).not.toHaveProperty("aggregation");
 });
@@ -189,7 +205,7 @@ test("invalid master sectors reject aggregation after a successful inspection", 
   const result = inspectAndAggregateHoldingsCsv(input, invalidMaster);
   expect(result).toEqual({
     kind: "aggregation_rejected",
-    inspection: inspectHoldingsCsv(input, invalidMaster),
+    inspection: inspectionOf(input, invalidMaster),
     reason: "invalid_stock_master",
   });
   if (result.kind !== "aggregation_rejected") return;
