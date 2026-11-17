@@ -4,6 +4,11 @@ import { errorResponse, internalError } from "../../../src/server/errors";
 import { readBody } from "../../../src/server/read-body";
 import { aggregatedResponse, inspectionFailedResponse } from "../../../src/server/response";
 
+// Worst synthetic input finished within 3.1 s on Vercel (#20); allow 10 s.
+// Pin the function to the Tokyo region (#114).
+export const maxDuration = 10;
+export const preferredRegion = "hnd1";
+
 export async function POST(request: Request): Promise<Response> {
   try {
     const mediaType = (request.headers.get("Content-Type") ?? "")
