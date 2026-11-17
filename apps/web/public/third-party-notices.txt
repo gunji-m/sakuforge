@@ -4,12 +4,12 @@ SakuForge's own code is licensed under the MIT License. The pages sent to your
 browser also contain the following third-party software and font. Their
 copyright notices and license texts are reproduced below.
 
-- Next.js 16.4.5 (MIT): client runtime, Turbopack runtime, polyfill-module
+- Next.js 16.4.6 (MIT): client runtime, Turbopack runtime, polyfill-module
 - React, React DOM, scheduler, react-server-dom-turbopack
   19.3.0-canary-278794d7-20261002, as bundled in Next.js (MIT)
 - process, as bundled in Next.js (MIT)
 - @swc/helpers 0.5.23 (Apache-2.0)
-- polyfill-nomodule of Next.js 16.4.5, sent only to browsers without module
+- polyfill-nomodule of Next.js 16.4.6, sent only to browsers without module
   support, which contains:
   - core-js 3.38.1 (MIT)
   - whatwg-fetch 3.0.0 (MIT)
@@ -18,7 +18,7 @@ copyright notices and license texts are reproduced below.
   (SIL Open Font License 1.1)
 
 ================================================================================
-Next.js 16.4.5
+Next.js 16.4.6
 ================================================================================
 
 The MIT License (MIT)
