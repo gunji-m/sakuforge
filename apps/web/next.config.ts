@@ -45,6 +45,7 @@ export default function config(phase: string): NextConfig {
     if (loaded.kind !== "loaded") {
       throw new Error(`stock master rejected: ${loaded.reason}`);
     }
+    // biome-ignore lint/suspicious/noConsole: build log of the stock master count and as-of date only; no stock data or user data.
     console.log(`stock master validated: ${loaded.stockMaster.size} stocks as of ${loaded.asOf}`);
   }
   return nextConfig;

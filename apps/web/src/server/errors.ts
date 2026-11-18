@@ -51,6 +51,7 @@ export type InternalErrorReason =
 
 /** Logs one fixed word for the operator, then returns the fixed `internal_error` answer. */
 export function internalError(reason: InternalErrorReason): Response {
+  // biome-ignore lint/suspicious/noConsole: the only function log; one fixed reason word, never CSV content, asset values, or file names (docs/design.md 8.3, #97).
   console.error(`internal_error ${reason}`);
   return errorResponse("internal_error");
 }

@@ -16,7 +16,22 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "preset": "recommended"
+      "preset": "recommended",
+      "suspicious": {
+        "noConsole": "error"
+      }
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["**/*.test.{ts,tsx}"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
+          }
+        }
+      }
+    }
+  ]
 }
