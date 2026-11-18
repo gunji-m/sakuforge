@@ -13,7 +13,7 @@
 - Treat `docs/domain-rules.md` and `docs/input-trust-principles.md` as the source of truth for domain behavior and input handling.
 - Write validation and aggregation as pure functions in TypeScript, with no side effects (no storage, network, clock, randomness, or logging). Put them in `packages/core`; it must not depend on the UI, React, or Next.js.
 - Pass decimal values (amounts, share counts, composition ratios) as strings in and out of `packages/core`. Do not use binary floating point (`number`) for them.
-- Server functions are limited to CSV inspection and aggregation (ADR 0004, `docs/decisions/0006-unlisted-public-release.md`). Never store the CSV or its results on the server, and never write CSV content, asset values, or file names to logs, errors, or monitoring.
+- The only server function that receives user data is CSV inspection and aggregation (ADR 0004, `docs/decisions/0006-unlisted-public-release.md`). Pages are also rendered on the server per request, and `proxy.ts` runs on each page request, so that each response gets its own Content-Security-Policy nonce (`docs/design.md` 7.1); keep them free of user data and the stock master. Never store the CSV or its results on the server, and never write CSV content, asset values, or file names to logs, errors, or monitoring.
 - Use the stock master only inside server functions. Do not send it to the browser.
 
 ## Git workflow
