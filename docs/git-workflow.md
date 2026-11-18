@@ -52,7 +52,15 @@ branch名は`<type>/<issue-number>-<short-description>`とします。
 | `chore` | 依存、CI、保守作業 | `chore/16-ci` |
 
 クラウドの実行環境で作業するagentも、この名前でbranchを作成します。実行環境が付ける名前（`claude/...`など）は
-使わず、例外は作りません。
+使いません。
+
+例外は定期実行（scheduleで動くagent）だけです。定期実行の環境はpush先を実行環境が付けた`claude/...`の
+branchに限るため、定期実行はその名前をそのまま使います。そのかわり、次を守ります（#199）。
+
+- PRの題名の末尾に、扱うIssueの番号を`(#番号)`の形で付ける
+- 1 branchで出すPRは1本だけにする。merge後はbranchを消す（`MERGED`以外の扱いは[Branchのlifecycleとcleanup](#branchのlifecycleとcleanup)に従う）
+
+定期実行以外の作業（開発者の直接の依頼で動くagentを含む）は、上の規則の名前を使います。
 
 原則として1 branch／1 PRは1 Issueだけを扱います。進行Issueを直接実装単位にせず、実際の変更を追跡する
 Issue番号を使用します。無関係な修正を同じbranchへ混ぜません。
