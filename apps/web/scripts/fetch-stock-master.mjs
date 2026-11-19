@@ -134,10 +134,12 @@ async function main() {
     result = { kind: "failed", reason: "unexpected" };
   }
   if (result.kind === "failed") {
+    // biome-ignore lint/suspicious/noConsole: build log of one fixed failure reason only; never the token, URL, body, or exception text.
     console.error(`stock master fetch failed: ${result.reason}`);
     process.exitCode = 1;
     return;
   }
+  // biome-ignore lint/suspicious/noConsole: build log of a fixed status line only; no stock data, URL, or token.
   console.log(
     result.kind === "written"
       ? "stock master fetched"

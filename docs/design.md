@@ -52,6 +52,7 @@ core の外（`apps/web` のサーバー関数）に残るもの:
 - 銘柄マスター JSON の読み込みと検証（[外部データとの約束](external-data-policy.md)）
 - 結果 JSON への変換と、出典・基準日の付加
 - ログに内容を出さないこと。残すのは、`internal_error` を返すときの固定の理由 1 語だけ（[8.3](#83-応答検査へ進めなかったときhttp-4xx5xx)。#97）
+  - `console` の呼び出しは `biome.json` の `noConsole` で lint の error にしている。例外は呼び出しの直前の `// biome-ignore lint/suspicious/noConsole: <理由>` で 1 か所ずつ付け、ファイルやディレクトリごと外さない（今は 4 か所：`errors.ts` の `internal_error`、build のときの `next.config.ts` の銘柄マスターの件数と基準日、`scripts/fetch-stock-master.mjs` の取得の失敗の理由と結果の 2 か所）。テスト（`*.test.ts(x)`）は `console` を見張るために参照するので、規則から外している（#194）
 
 画面側のコード（`apps/web/src/client/` と、`app/` の `"use client"` のファイル）はブラウザへ配るので、
 サーバー側（`src/server/`、`app/api/`）と core を読み込みません。銘柄マスターと検査の処理をサーバー関数の
