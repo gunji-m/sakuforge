@@ -6,6 +6,8 @@
 Private vulnerability reporting
 （このリポジトリの Security タブの「Report a vulnerability」）から連絡してください。
 
+不具合の連絡も同じ窓口から受け付けます。外部の人からの Issue・PR・コメントは、GitHub の設定で止めています。
+
 ## Issue と PR に貼らないもの
 
 このリポジトリは Public です。Issue、PR、コメントには合成データ以外を貼らないでください。
