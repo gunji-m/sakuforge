@@ -38,6 +38,14 @@ GitHub の次の設定で守ります。無効にするときは、代わりの�
 
 上の設定と ruleset が有効であることは、2026-11-17 に GitHub の画面で確かめました（#188）。
 
+本人以外の書き込みを止めるため、次も有効にします（#200、[`docs/layer-operations.md`](layer-operations.md) の「本人以外が書いた Issue・PR・コメント」）。
+
+- fork からの PR の workflow は、承認してから動かす（Settings → Actions → General の「Fork pull request workflows」で、外部の人のすべての PR に承認を求める）
+- Interaction limits（Settings → Moderation options）で、外部の人の Issue・コメント・PR を止める。制限は最長 6 か月なので、期限の前に本人が更新する
+- 起票の画面では、テンプレートを使わない空の Issue を止め、脆弱性の連絡を [`SECURITY.md`](../SECURITY.md) の窓口へ導く（`.github/ISSUE_TEMPLATE/config.yml`）
+
+上の 2 つの GitHub の画面の設定の今の値は、まだ確かめていません（agent からは見えないため。本人が確かめて、ここに日付を書く）。
+
 ## Branch命名
 
 branch名は`<type>/<issue-number>-<short-description>`とします。
