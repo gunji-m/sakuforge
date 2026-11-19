@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * Runs before `next build` (docs/design.md 4.1, #113). In the Vercel Production build only, it
  * fetches the stock master JSON from the private repository with the read-only token and writes it
@@ -26,7 +27,11 @@ const ALLOWED_URL_PREFIX = "https://api.github.com/repos/";
 export const MAX_BYTES = 16 * 1024 * 1024;
 const TIMEOUT_MS = 60_000;
 
-/** Whether this build is the Vercel Production build (Vercel sets VERCEL_ENV). */
+/**
+ * Whether this build is the Vercel Production build (Vercel sets VERCEL_ENV).
+ * @param {Record<string, string | undefined>} env
+ * @returns {boolean}
+ */
 export function isProductionBuild(env) {
   return env.VERCEL_ENV === "production";
 }
@@ -63,7 +68,7 @@ async function readAtMost(body, limit) {
 }
 
 /**
- * @param {{ env: Record<string, string | undefined>, fetch: typeof fetch, root: string }} options
+ * @param {{ env: Record<string, string | undefined>, fetch: typeof globalThis.fetch, root: string }} options
  * @returns {Promise<{ kind: "skipped" } | { kind: "written" } | { kind: "failed", reason: string }>}
  */
 export async function fetchStockMaster({ env, fetch, root }) {

@@ -1,0 +1,6 @@
+# このリポジトリ固有の設定（agent-workflows の正本の写しではない）。#200
+blank_issues_enabled: false
+contact_links:
+  - name: 脆弱性・不具合の連絡
+    url: https://github.com/gunji-m/sakuforge/security/advisories/new
+    about: 公開の Issue ではなく、Private vulnerability reporting から連絡してください（SECURITY.md）。実際の保有 CSV・資産値・個人を特定できる情報は貼らないでください。
