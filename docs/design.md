@@ -77,6 +77,10 @@ pnpm workspace は次の2つのパッケージで構成します。
 このリポジトリには置きません（[4](#4-銘柄マスター-json-の流れ)）。東証の Excel を読む依存を、公開するアプリの
 lockfile に入れないためです。`.gitignore` の `data/stock-master/` は、build のときに取得した JSON の置き場
 （`apps/web/data/stock-master/stock-master.json`）で、リポジトリに入れません。
+追跡されているファイルに `data/stock-master/` の下のファイル、`.csv`、`.xls`、`.xlsx` があると、
+`pnpm test` の `apps/web/src/repository-files.test.ts` が失敗します（#193。ファイルの path だけを見て、中身と履歴は見ない）。
+合成データはテストのコードの中に書くのを基本とし、合成の CSV をファイルで置くときは、そのテストの許可の一覧に
+path を 1 つずつ理由つきで足します。`data/stock-master/` の下と Excel は許可できません。
 
 ## 4. 銘柄マスター JSON の流れ
 
