@@ -24,6 +24,27 @@ GitHub の branch protection／ruleset で`main`を守ります。
 - force push禁止
 - PR必須
 - 必須checkはCIの`validate`。merge前にbranchが最新の`main`を含むことも求める（[4](#4-merge-commitとmain確認)の手順で追いつかせる）
+- rulesetを回避できる相手（bypass list）を置かない
+- 許すmergeの方法はMerge commitだけ
+
+## GitHub の側で有効にしておく設定
+
+CIの`validate`が行うのは lint・typecheck・test・build です。秘密情報の混入と、依存の既知の脆弱性は、
+GitHub の次の設定で守ります。無効にするときは、代わりの守りを先に決めます（#188）。
+
+- secret scanning と push protection（秘密情報を含む push を、push の時点で止める）
+- Dependency graph、Dependabot alerts、Dependabot security updates（脆弱性の修正のPRを自動で出す）
+- Private vulnerability reporting（[`SECURITY.md`](../SECURITY.md) が案内している窓口）
+
+上の設定と ruleset が有効であることは、2026-11-17 に GitHub の画面で確かめました（#188）。
+
+本人以外の書き込みを止めるため、次も有効にします（#200、[`docs/layer-operations.md`](layer-operations.md) の「本人以外が書いた Issue・PR・コメント」）。
+
+- fork からの PR の workflow は、承認してから動かす（Settings → Actions → General の「Fork pull request workflows」で、外部の人のすべての PR に承認を求める）
+- Interaction limits（Settings → Moderation options）で、外部の人の Issue・コメント・PR を止める。制限は最長 6 か月なので、期限の前に本人が更新する
+- 起票の画面では、テンプレートを使わない空の Issue を止め、脆弱性の連絡を [`SECURITY.md`](../SECURITY.md) の窓口へ導く（`.github/ISSUE_TEMPLATE/config.yml`）
+
+上の 2 つの GitHub の画面の設定の今の値は、まだ確かめていません（agent からは見えないため。本人が確かめて、ここに日付を書く）。
 
 ## Branch命名
 
