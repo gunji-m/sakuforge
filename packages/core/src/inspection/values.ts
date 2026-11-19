@@ -55,6 +55,8 @@ export function parseHoldingNumber(text: string): string | null {
 export function parseDividendPerShare(
   text: string,
 ): { readonly lower: string; readonly upper: string | null } | null {
+  // A whole cell of `--` is read as the single value 0 (#172, #181). Only this spelling is accepted.
+  if (trimAsciiSpaces(text) === "--") return { lower: "0", upper: null };
   const separator = text.indexOf("~");
   if (separator === -1) {
     const parts = decimalParts(text, 6);
