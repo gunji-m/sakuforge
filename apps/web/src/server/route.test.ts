@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import * as core from "@sakuforge/core";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { POST } from "../../app/api/inspect/route";
+import { maxDuration, POST, preferredRegion } from "../../app/api/inspect/route";
 import * as currentStockMaster from "./current-stock-master";
 import { ERRORS } from "./errors";
 import { syntheticRealSizedMaster } from "./test-stock-master";
@@ -109,6 +109,11 @@ async function expectError(response: Response, code: keyof typeof ERRORS): Promi
     error: { code, message: ERRORS[code].message },
   });
 }
+
+test("関数の最大実行時間は10秒、リージョンはhnd1", () => {
+  expect(maxDuration).toBe(10);
+  expect(preferredRegion).toBe("hnd1");
+});
 
 test.each(["text/csv", " Text/CSV ; charset=utf-8", "APPLICATION/VND.MS-EXCEL"])(
   "%sを受け付け、集計の10進値を文字列で返す",

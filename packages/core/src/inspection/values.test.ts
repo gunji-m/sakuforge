@@ -1,6 +1,12 @@
 import { expect, test } from "vitest";
 import { createFinding } from "./findings";
-import { checkHoldingsValues, checkStockCode, isDividendPerShare, isHoldingNumber } from "./values";
+import {
+  checkHoldingsValues,
+  checkStockCode,
+  isDividendPerShare,
+  isHoldingNumber,
+  parseDividendPerShare,
+} from "./values";
 
 test.each(["9A9A", "9C9C", "9D9D", "1A0Y"])("stock code %j is accepted verbatim", (code) => {
   expect(checkStockCode(code)).toBeNull();
@@ -125,8 +131,20 @@ test.each([
 ])("dividend %j is accepted with exact string comparison", (value) => {
   expect(isDividendPerShare(value)).toBe(true);
 });
+test.each(["--", " -- ", "  --  "])("dividend %j is read as the single value 0", (value) => {
+  expect(parseDividendPerShare(value)).toEqual({ lower: "0", upper: null });
+});
 test.each([
-  ...invalidNumbers,
+  ...invalidNumbers.filter((value) => value !== "--"),
+  "---",
+  "\t--",
+  "--\t",
+  "\u3000--",
+  "－－",
+  "-- ~ 10",
+  "--~10",
+  "0 ~ --",
+  "-- ~ --",
   "1000000",
   "1,000,000",
   "50 ~ 40",
