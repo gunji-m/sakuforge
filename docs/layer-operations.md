@@ -52,5 +52,5 @@ Issue・PR・コメントに、実際の保有 CSV・資産値・スクリーン
 1. agent は中身を引用・転記せず（PR・Issue・コメント・commit・ログのどれにも）、どこに貼られたか（Issue・PR の番号とコメントの URL）だけを本人に伝えて止まる。消すのは本人が行う。
 2. 本人が消す：コメントは削除する。Issue・PR の本文は編集で消し、編集の履歴（「edited」の一覧）からその版も削除する。Issue ごと消すほうが早ければ Issue を削除する。
 3. PR の commit に入っていたら：PR は削除できず、fork の branch と GitHub の参照に残るので、GitHub Support に消去を頼む（Docs の「Removing sensitive data from a repository」）。
-4. 秘密だったら：消すだけでは足りないので、すぐに無効にして入れ替える（Vercel の環境変数と、発行元のトークン。手順は PR #186 の `docs/operations.md` の秘密の入れ替え）。
+4. 秘密だったら：消すだけでは足りないので、すぐに無効にして入れ替える（Vercel の環境変数と、発行元のトークン。手順は [`docs/operations.md`](operations.md) の 5 節「秘密の入れ替え」）。
 5. 影響を確かめる：貼られていた時間、ほかの場所（通知のメール、fork、検索）に写った可能性を見て、何をしたかを個人の情報を書かずに Issue に残す。
