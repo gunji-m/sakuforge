@@ -12,10 +12,10 @@
 
 [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json) で、手元に Node や pnpm を入れずに、`.node-version` と同じ Node と lockfile どおりの依存で動かせる。Vercel の実行環境を再現するものではない。
 
-1. VS Code の Dev Containers 拡張などで、リポジトリをコンテナで開く。作成時に `corepack pnpm install --frozen-lockfile` が走る
+1. VS Code の Dev Containers 拡張などで、リポジトリをコンテナで開く。作成時に Corepack を入れて（`npm install -g corepack@0.36.0`）、`corepack pnpm install --frozen-lockfile` が走る
 2. コンテナの中で `pnpm lint`、`pnpm typecheck`、`pnpm test`、`pnpm build` を実行する
 
-`node_modules` はコンテナ専用の volume に置くので、手元の `node_modules` とは混ざらない。Next.js の開発サーバーの port 3000 は手元へ転送し、Next.js の匿名テレメトリーは止めてある（`NEXT_TELEMETRY_DISABLED=1`）。Node の版を上げるときは、`.node-version` とイメージのタグ・digest を一緒に直す。`.node-version`、イメージのタグ、ルートと `apps/web` の `package.json` の `engines.node`（メジャー版）が一致することは、`apps/web/src/node-version.test.ts` が確かめる。
+`node_modules` はコンテナ専用の volume に置くので、手元の `node_modules` とは混ざらない。Next.js の開発サーバーの port 3000 は手元へ転送し、Next.js の匿名テレメトリーは止めてある（`NEXT_TELEMETRY_DISABLED=1`）。Node の版を上げるときは、`.node-version` とイメージのタグ・digest を一緒に直す。Node 25 からは Corepack が Node に同梱されないので、Dev Container の `postCreateCommand` と CI（`.github/workflows/ci.yml`）で版を固定して入れている。Corepack は Dependabot が上げないので、Node の版を上げるときに一緒に見直す。`.node-version`、イメージのタグ、ルートと `apps/web` の `package.json` の `engines.node`（メジャー版）が一致することは、`apps/web/src/node-version.test.ts` が確かめる。
 
 Dependabot（月 1 回）が見るのは npm の依存と GitHub Actions だけ。Node（`.node-version` と Dev Container のイメージ）と pnpm（ルートの `package.json` の `packageManager`）は Dependabot が上げないので、Dependabot の PR を見るときに新しい版が出ていないかを確かめ、上げるときは Issue を立てて手で直す。Next.js のメジャー更新も Dependabot からは出ない（[ADR 0004](docs/decisions/0004-vercel-nextjs-server-side.md)）。`@types/node` のメジャー更新も出ないので、Node のメジャーを上げるときに一緒に上げる。Next.js・書体を上げるとき（Dependabot の PR を含む）と、ブラウザへ配る JS に入る依存を足すときは、第三者のライセンスの表示（`apps/web/public/third-party-notices.txt`、[docs/design.md](docs/design.md) の 6.7）の版と文面を見直す。
 
