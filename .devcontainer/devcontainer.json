@@ -8,6 +8,6 @@
     "COREPACK_ENABLE_DOWNLOAD_PROMPT": "0",
     "NEXT_TELEMETRY_DISABLED": "1"
   },
-  "postCreateCommand": "corepack enable && corepack pnpm install --frozen-lockfile",
+  "postCreateCommand": "npm install -g corepack@0.36.0 && corepack enable && corepack pnpm install --frozen-lockfile",
   "forwardPorts": [3000]
 }
