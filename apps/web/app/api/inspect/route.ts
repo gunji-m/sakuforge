@@ -5,9 +5,9 @@ import { readBody } from "../../../src/server/read-body";
 import { aggregatedResponse, inspectionFailedResponse } from "../../../src/server/response";
 
 // Worst synthetic input finished within 3.1 s on Vercel (#20); allow 10 s.
-// Pin the function to the Tokyo region (#114).
+// The Tokyo region is set in apps/web/vercel.json (#215): Next.js deprecated
+// `preferredRegion`, and Vercel never applied it to Node.js functions.
 export const maxDuration = 10;
-export const preferredRegion = "hnd1";
 
 export async function POST(request: Request): Promise<Response> {
   try {

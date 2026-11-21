@@ -1,9 +1,9 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import * as core from "@sakuforge/core";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { maxDuration, POST, preferredRegion } from "../../app/api/inspect/route";
+import { maxDuration, POST } from "../../app/api/inspect/route";
 import * as currentStockMaster from "./current-stock-master";
 import { ERRORS } from "./errors";
 import { syntheticRealSizedMaster } from "./test-stock-master";
@@ -110,9 +110,10 @@ async function expectError(response: Response, code: keyof typeof ERRORS): Promi
   });
 }
 
-test("関数の最大実行時間は10秒、リージョンはhnd1", () => {
+test("関数の最大実行時間は10秒、リージョンは vercel.json の hnd1 だけ", () => {
   expect(maxDuration).toBe(10);
-  expect(preferredRegion).toBe("hnd1");
+  const config = JSON.parse(readFileSync(new URL("../../vercel.json", import.meta.url), "utf8"));
+  expect(config.regions).toEqual(["hnd1"]);
 });
 
 test.each(["text/csv", " Text/CSV ; charset=utf-8", "APPLICATION/VND.MS-EXCEL"])(

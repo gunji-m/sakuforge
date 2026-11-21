@@ -15,7 +15,7 @@ Vercel に載せたアプリを、確かめる・公開する・止める・戻�
 | Root Directory | `apps/web` | Vercel の画面 |
 | Build Command | `pnpm run build`（銘柄マスターの取得を含む。`next build` で上書きしない） | `apps/web/package.json` |
 | Node・pnpm | Node は `engines` の `24.x`、pnpm は `packageManager` の版（Vercel は両方を読む） | `package.json` |
-| 関数のリージョン・最大実行時間 | `hnd1`（東京）・10 秒 | `apps/web/app/api/inspect/route.ts`（`preferredRegion`・`maxDuration`）。[設計](design.md)の 5 節 |
+| 関数のリージョン・最大実行時間 | `hnd1`（東京）・10 秒 | リージョンは `apps/web/vercel.json` の `regions`、最大実行時間は `apps/web/app/api/inspect/route.ts` の `maxDuration`。[設計](design.md)の 5 節 |
 | 本番のブランチ | `main`。本番のドメインへの自動の割り当て（Auto-assign Custom Production Domains）はオフ | Vercel の画面 |
 | 配備の保護 | Vercel Authentication（Standard Protection） | Vercel の画面 |
 | 環境変数 | `STOCK_MASTER_TOKEN`・`STOCK_MASTER_URL`（Production だけ、Type は Secret） | [設計](design.md)の 4.6 |
