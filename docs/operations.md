@@ -14,7 +14,7 @@ Vercel に載せたアプリを、確かめる・公開する・止める・戻�
 | プラン | Hobby（非商用・無課金・宣伝なしの間だけ） | [ADR 0006](decisions/0006-unlisted-public-release.md) |
 | Root Directory | `apps/web` | Vercel の画面 |
 | Build Command | `pnpm run build`（銘柄マスターの取得を含む。`next build` で上書きしない） | `apps/web/package.json` |
-| Node・pnpm | Node は `engines` の `24.x`、pnpm は `packageManager` の版（Vercel は両方を読む） | `package.json` |
+| Node・pnpm | Node は `engines` の `26.x`、pnpm は `packageManager` の版（Vercel は両方を読む） | `package.json` |
 | 関数のリージョン・最大実行時間 | `hnd1`（東京）・10 秒 | `apps/web/app/api/inspect/route.ts`（`preferredRegion`・`maxDuration`）。[設計](design.md)の 5 節 |
 | 本番のブランチ | `main`。本番のドメインへの自動の割り当て（Auto-assign Custom Production Domains）はオフ | Vercel の画面 |
 | 配備の保護 | Vercel Authentication（Standard Protection） | Vercel の画面 |

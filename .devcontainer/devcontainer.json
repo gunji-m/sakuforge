@@ -1,6 +1,6 @@
 {
   "name": "sakuforge",
-  "image": "node:24.22.1-bookworm@sha256:d862bb5d082c5ae0210ac07e8c0344cb8cf7bef6d78e9b8c50c179da923108ea",
+  "image": "node:26.13.1-bookworm@sha256:b7087bc4d973034b30854b378ba107f9fab622b47514cb7e2592e41b8bab8d49",
   "mounts": [
     "source=sakuforge-node_modules-${devcontainerId},target=${containerWorkspaceFolder}/node_modules,type=volume"
   ],
