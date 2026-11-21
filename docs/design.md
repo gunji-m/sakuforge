@@ -117,6 +117,9 @@ flowchart LR
 3. サーバー関数は、配備物の JSON を読み、信用せずに検証してから core へ渡す。ブラウザへは配らない
    （[ADR 0004](decisions/0004-vercel-nextjs-server-side.md)）
 
+build が通った配備が本番に出るのは、本番のドメインへの自動の割り当てがオンのときです。今の設定と、毎月の確かめ方は
+[運用手順](operations.md)の 1 節と 6 節にあります（#201）。
+
 JSON と生成の道具は非公開のリポジトリに置き、このリポジトリには置きません（[ADR 0002](decisions/0002-public-repository.md)）。
 非公開のリポジトリの名前と URL は、文書・Issue・PR に書きません。元の Excel は保存せず、変換したら捨てます。
 
