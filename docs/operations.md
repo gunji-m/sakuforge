@@ -21,7 +21,7 @@ Vercel に載せたアプリを、確かめる・公開する・止める・戻�
 | 環境変数 | `STOCK_MASTER_TOKEN`・`STOCK_MASTER_URL`（Production だけ、Type は Secret） | [設計](design.md)の 4.6 |
 
 - リージョンと最大実行時間はコードが正本です。Vercel の画面（Settings → Functions）にも同じ値を入れてあります。
-  変えるときは `route.ts` を PR で変え、画面も同じ値に合わせます。画面だけで変えません
+  変えるときは、リージョンは `vercel.json`、最大実行時間は `route.ts` を PR で変え、画面も同じ値に合わせます。画面だけで変えません
 - 自動の割り当てがオフの間は、`main` に merge すると Production として build されますが、本番のドメインには
   出ません（Staged）。本番に出すのは 3 の手順だけです
 - 自動の割り当ては、オンに戻すと決めました（2026-11-21、#201 の案 A）。build が通った Production の配備は、そのまま
@@ -95,7 +95,7 @@ curl -s -i -X POST \
 ### 5.1 銘柄マスターを読むトークン
 
 `STOCK_MASTER_TOKEN` は、非公開のリポジトリ 1 つの内容を読むだけの fine-grained token です（[設計](design.md)の 4.6）。
-期限があり、期限が切れると Production の build が `stock master rejected` で止まります（前の配備は残ります）。
+期限があり、期限が切れると Production の build が `stock master fetch failed: http_<status>` で止まり、`next build` は動きません（前の配備は残ります）。
 
 1. 期限の前に、GitHub で同じ範囲（対象は非公開のリポジトリ 1 つ、Contents: Read-only）の新しいトークンを作る
 2. Vercel の Settings → Environment Variables で `STOCK_MASTER_TOKEN` を新しい値にする（Production だけ、Type は Secret）
