@@ -33,8 +33,6 @@ test.each([
   ["形の合わない 200", () => json({ schemaVersion: 1, result: "aggregated" })],
   ["知らない版の 200", () => json(aggregated({ schemaVersion: 2 }))],
   ["JSON でない 200", () => new Response("<html>", { status: 200 })],
-  ["JSON でない 500", () => new Response("<html>", { status: 500 })],
-  ["形の合う本文を持つ 201", () => json(aggregated(), 201)],
 ])("%s は invalid の失敗にする", async (_name, respond) => {
   expect(await submitCsv(csv, async () => respond())).toEqual({
     kind: "failure",
@@ -56,9 +54,21 @@ test("API の誤りの応答は、code と message を返す", async () => {
 test.each([
   [413, "too_large"],
   [504, "timeout"],
+  [429, "rate_limited"],
+  [503, "unavailable"],
+  [500, "unavailable"],
+  [502, "unavailable"],
+  [403, "unavailable"],
 ] as const)("基盤が返す %s は %s の失敗にする", async (status, reason) => {
   const respond = async () => new Response("<html>", { status });
   expect(await submitCsv(csv, respond)).toEqual({ kind: "failure", reason });
+});
+
+test("200 以外は、形の合う本文があっても結果にせず unavailable の失敗にする", async () => {
+  expect(await submitCsv(csv, async () => json(aggregated(), 201))).toEqual({
+    kind: "failure",
+    reason: "unavailable",
+  });
 });
 
 test("通信の例外は network の失敗にし、例外を外へ出さない", async () => {

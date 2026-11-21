@@ -171,6 +171,8 @@ test("検査NGの所見に銘柄マスター由来のものがあれば、出典
 test.each([
   ["too_large", MESSAGES.tooLarge],
   ["timeout", MESSAGES.timeout],
+  ["rate_limited", MESSAGES.rateLimited],
+  ["unavailable", MESSAGES.unavailable],
   ["network", MESSAGES.network],
   ["invalid", MESSAGES.invalidResponse],
 ] as const)("失敗（%s）では、前回の結果を残して固定の文言を出す", (reason, text) => {

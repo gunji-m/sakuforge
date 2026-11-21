@@ -8,7 +8,21 @@ import {
 export type SubmitOutcome =
   | { readonly kind: "response"; readonly response: InspectResponse }
   | { readonly kind: "api_error"; readonly error: ApiError }
-  | { readonly kind: "failure"; readonly reason: "too_large" | "timeout" | "network" | "invalid" };
+  | { readonly kind: "failure"; readonly reason: FailureReason };
+
+/**
+ * Why a submission gave no result (docs/design.md 6.5). `invalid` is a 200 the
+ * screen cannot read, which a page reload can fix when the deployment changed.
+ * `unavailable` is any other platform answer without the API's fixed code
+ * (503 while the project is paused, a 5xx or 4xx that is not JSON).
+ */
+export type FailureReason =
+  | "too_large"
+  | "timeout"
+  | "rate_limited"
+  | "unavailable"
+  | "network"
+  | "invalid";
 
 type Fetch = (input: string, init: RequestInit) => Promise<Response>;
 
@@ -72,7 +86,9 @@ async function send(body: Blob, fetcher: Fetch, signal: AbortSignal): Promise<Su
   // The platform answers these itself, not always with JSON.
   if (response.status === 413) return { kind: "failure", reason: "too_large" };
   if (response.status === 504) return timedOut;
-  return { kind: "failure", reason: "invalid" };
+  // The WAF rate limit answers 429 by default (#210).
+  if (response.status === 429) return { kind: "failure", reason: "rate_limited" };
+  return { kind: "failure", reason: "unavailable" };
 }
 
 const timedOut: SubmitOutcome = { kind: "failure", reason: "timeout" };
