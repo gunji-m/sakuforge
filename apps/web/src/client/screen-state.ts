@@ -1,7 +1,7 @@
 import type { Aggregation, Finding, InspectResponse, StockMasterAttribution } from "./api-response";
 import { MESSAGES } from "./messages";
 import type { StoredResult } from "./storage";
-import type { SubmitOutcome } from "./submit";
+import type { FailureReason, SubmitOutcome } from "./submit";
 
 export interface ShownResult {
   readonly aggregation: Aggregation;
@@ -50,9 +50,11 @@ export const INITIAL_STATE: State = { loaded: false, result: null, sending: fals
 const FAILURE_TEXT = {
   too_large: MESSAGES.tooLarge,
   timeout: MESSAGES.timeout,
+  rate_limited: MESSAGES.rateLimited,
+  unavailable: MESSAGES.unavailable,
   network: MESSAGES.network,
   invalid: MESSAGES.invalidResponse,
-} as const;
+} as const satisfies Record<FailureReason, string>;
 
 function message(text: string): Notice {
   return { kind: "message", text };
