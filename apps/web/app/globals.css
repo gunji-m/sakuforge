@@ -405,9 +405,9 @@ button,
 }
 
 .bar-label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* Long sector names wrap instead of being cut, so every name stays readable (#220). */
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .bar-track {
