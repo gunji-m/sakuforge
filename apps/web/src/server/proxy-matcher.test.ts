@@ -15,6 +15,10 @@ test.each([
   "/favicon.ico",
   "/icon.svg.bak",
   "/third-party-notices.txt.bak",
+  "/_next/imagefoo",
+  "/_next/image/x",
+  "/_next/images",
+  "/_next/image.png",
 ])("ページと、存在しない path の 404（%s）には、nonce 付きの CSP を付ける", (path) => {
   expect(matches(path)).toBe(true);
 });
@@ -24,6 +28,7 @@ test.each([
   "/third-party-notices.txt",
   "/api/inspect",
   "/_next/static/chunks/main.js",
+  "/_next/image",
   "/_next/image?url=x",
 ])("静的なファイルと API（%s）には、ページ用の CSP を付けない", (path) => {
   expect(matches(path)).toBe(false);

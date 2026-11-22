@@ -22,6 +22,6 @@ export const config = {
   // Pages only, including not-found pages for any other path. The API, Next.js's static files, the
   // static icon and the third-party notices get their headers from next.config.ts.
   matcher: [
-    { source: "/((?!api/|_next/static/|_next/image|icon\\.svg$|third-party-notices\\.txt$).*)" },
+    { source: "/((?!api/|_next/static/|_next/image$|icon\\.svg$|third-party-notices\\.txt$).*)" },
   ],
 };
