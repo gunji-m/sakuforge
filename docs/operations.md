@@ -131,7 +131,7 @@ curl -s -i -X POST \
 ### 6.1 関数のログの残り方
 
 - Hobby では、関数のログ（Runtime Logs）は 1 時間で消えます。ログを外へ送る Drains は Pro 以上で、Hobby では使えません
-  （Vercel の公式資料「Runtime Logs」「Working with Drains」で 2026-11-20 に確かめた。画面での確認はまだ）
+  （Vercel の公式資料「Runtime Logs」「Working with Drains」で 2026-11-20 に確かめた。2026-11-22 に本人が画面で確かめ、プロジェクトの Logs の Timeline で選べる範囲は 1 時間まで）
 - `internal_error` のときに残るのは固定の理由 1 語だけです（[設計](design.md)の 8.3、#97）。1 時間を過ぎると、これも残りません
 - 失敗の連絡を受けたら、ログで原因を追うより先に、6.2 と同じ合成の CSV で再現するかを確かめます
 
