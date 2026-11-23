@@ -8,6 +8,10 @@ import { API_CONTENT_SECURITY_POLICY } from "./security-headers";
 const nextConfig = configFor(PHASE_PRODUCTION_SERVER);
 const matches = (url: string) => unstable_doesMiddlewareMatch({ config, url, nextConfig });
 
+test("画像の最適化の入口（/_next/image）は閉じ、存在しない path と同じ 404 のページにする", () => {
+  expect(nextConfig.images?.unoptimized).toBe(true);
+});
+
 test.each([
   "/",
   "/nope",
@@ -15,6 +19,9 @@ test.each([
   "/favicon.ico",
   "/icon.svg.bak",
   "/third-party-notices.txt.bak",
+  "/_next/image",
+  "/_next/image?url=x",
+  "/_next/image?url=%2F&w=64&q=75",
   "/_next/imagefoo",
   "/_next/image/x",
   "/_next/images",
@@ -28,8 +35,6 @@ test.each([
   "/third-party-notices.txt",
   "/api/inspect",
   "/_next/static/chunks/main.js",
-  "/_next/image",
-  "/_next/image?url=x",
 ])("静的なファイルと API（%s）には、ページ用の CSP を付けない", (path) => {
   expect(matches(path)).toBe(false);
 });
