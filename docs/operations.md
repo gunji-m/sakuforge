@@ -19,6 +19,7 @@ Vercel に載せたアプリを、確かめる・公開する・止める・戻�
 | 本番のブランチ | `main`。本番のドメインへの自動の割り当て（Auto-assign Custom Production Domains）は今はオフ。オンに戻すと決めた（案 A、#201） | Vercel の画面 |
 | 配備の保護 | Vercel Authentication（Standard Protection） | Vercel の画面 |
 | 環境変数 | `STOCK_MASTER_TOKEN`・`STOCK_MASTER_URL`（Production だけ、Type は Secret） | [設計](design.md)の 4.6 |
+| WAF のレート制限 | 検査 API とページを 1 つの規則で。IP ごとに 60 秒で 30 回を超えたら 429（下の箇条書き） | Vercel の画面。対象と理由は[設計](design.md)の 7 節 |
 
 - リージョンと最大実行時間はコードが正本です。Vercel の画面（Settings → Functions）にも同じ値を入れてあります。
   変えるときは、リージョンは `vercel.json`、最大実行時間は `route.ts` を PR で変え、画面も同じ値に合わせます。画面だけで変えません
@@ -30,6 +31,14 @@ Vercel に載せたアプリを、確かめる・公開する・止める・戻�
 - Build Command を `next build` にすると銘柄マスターの取得が飛ばされ、build が `stock master rejected: unreadable` で
   止まります。`STOCK_MASTER_URL` は GitHub の contents API の形（`https://api.github.com/repos/<owner>/<repo>/contents/<path>`、
   既定以外のブランチなら `?ref=<branch>`）にします。ブラウザの `github.com/.../blob/...` の形だと `http_404` になります（#113）
+- WAF のレート制限は、Firewall → Configure の Rate Limit の規則 1 つで掛けます（Hobby は 1 つまで）。条件は **Request Path** の
+  `Matches expression` で `^/(?!_next/static/|icon\.svg$|third-party-notices\.txt$)` にします（`proxy.ts` の
+  matcher から `api/` の除外を外した形。静的ファイルは数えません）。使っていない画像の最適化の入口 `/_next/image` は、
+  ページの描画を起こせるので数えます（`proxy.ts` の matcher からも外す、#248）。Route（`x-matched-path`）を条件にすると `proxy.ts` の後で
+  評価され、止めた要求でも関数の枠が減るので使いません。数える鍵は IP、窓は固定の 60 秒、しきい値は 30 回、動作は 429 です。
+  ふつうの使い方（ページを開く・取り込む・再読み込みを数回）は 1 分に 10 回ほどで、掛かりません
+- 最初は動作を Log にして Firewall の画面で数え方を確かめてから 429 に切り替え、ブラウザで一度掛けて、ページが 429 のときに
+  見える基盤の本文を確かめます（本人の操作。まだ設定していない、#114）。数え方は region ごとです
 - プロジェクト名（本番の URL の `*.vercel.app` の名前）は変えません（2026-11-22 に本人が決めた、#231）。名前を変えた後や
   プロジェクトを消した後の古い名前は、第三者が取れうるためです。取られると、同じ URL に偽の画面を出して CSV を集めることも、
   前の利用者のブラウザに残る保存分（[設計](design.md)の 6.2）を読むこともできます。やめるときの扱いは 4.4 にあります
