@@ -459,6 +459,7 @@ stateDiagram-v2
 | 検査 API と、`/api/` の下の存在しない path の 404 | `Content-Security-Policy` | `default-src 'none'; frame-ancestors 'none'` |
 | 静的なアイコン（`/icon.svg`） | `Content-Security-Policy` | 検査 API と同じ値。ページ用の nonce 付きの値は付けない（#139） |
 | 第三者のライセンスの表示（`/third-party-notices.txt`） | `Content-Security-Policy` | 検査 API と同じ値。ページ用の nonce 付きの値は付けない（#73） |
+| ページへの `GET`・`HEAD` 以外の要求（存在しない path を含む） | `Content-Security-Policy`、`Allow` | 405 を返し、検査 API と同じ CSP と `Allow: GET, HEAD` を付ける。Next.js まで通さないので、Server Action の形の `POST` で要求のヘッダーの文字とスタックトレースが関数のログに書かれることはない（`apps/web/proxy.ts`、#257） |
 
 - ページには `robots` の meta（`noindex, nofollow`）も入れる
 - nonce を応答ごとに変えるため、ページは要求のたびに描画する（静的に生成しない）
