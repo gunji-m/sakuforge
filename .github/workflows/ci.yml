@@ -27,8 +27,10 @@ jobs:
           node-version-file: .node-version
           package-manager-cache: false
 
-      - name: Enable Corepack
-        run: corepack enable
+      - name: Install and enable Corepack
+        run: |
+          npm install -g corepack@0.36.0
+          corepack enable
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
