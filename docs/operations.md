@@ -63,6 +63,8 @@ curl -s -i -X POST \
 - `/_next/image` が閉じていること：`/_next/image?url=%2F&w=64&q=75` を `GET` で送り、存在しない path と同じ 404 のページ
   （nonce 付きの `Content-Security-Policy`）が返ることを確かめます。Vercel は画像の最適化を基盤の側で受けるので、手元の
   `next start` と同じ結果とは限りません（#248）
+- ページが `GET`・`HEAD` だけを受けること：`/` に合成の値の `Next-Action` ヘッダーを付けた `POST` を送り、405（`Allow: GET, HEAD`）が返り、
+  Logs にその要求の `Error:` とスタックトレースが出ないことを確かめます（#257）
 - 関数の実行時間と最大実行時間は、Logs → Request Logs で要求の行を開き、「Execution Duration / Maximum」で見ます
 - 配備ごとの URL は、Deployments で配備を開いた画面の Domains にあります。`main` の最新の配備は、ブランチの別名の URL でも開けます
 
