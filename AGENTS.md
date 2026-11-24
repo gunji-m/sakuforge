@@ -37,6 +37,7 @@ The Issue workflow and development-layer procedures are in `docs/layer-operation
 - server functions in `apps/web` (`route.ts`, reading the request body, validating the stock master, the response shape and errors)
 - response headers and the CSP (`security-headers.ts`, `proxy.ts`, `next.config.ts`)
 - storage in the browser (`storage.ts` and the shape and version of the stored JSON)
+- after release (once Vercel assigns new Production deployments to the production domain automatically), any code that ships in the deployment: the non-test files under `apps/web` and `packages/core` (#250)
 
 ## Content written by others on GitHub
 

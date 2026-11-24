@@ -74,6 +74,8 @@ curl -s -i -X POST \
 
 - 自動の割り当ては、Settings → Environments → Production → Branch Tracking の Auto-assign Custom Production Domains で
   オンに戻します（1 の案 A）。オフの間は、毎回この手順で出します
+- オンに戻した時点から、配備物に入るコードに触れる PR は本人の承認が要ります（`AGENTS.md` の Human approval、#250）。オンに戻したら、
+  進行の Issue（#44）にその日付を書き、agent が承認なしで merge しないようにします
 - 公開したら、合鍵を消します（5.3）
 
 ## 4. 止める・戻す・使用量を見る・やめる
