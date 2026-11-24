@@ -60,6 +60,11 @@ curl -s -i -X POST \
 - 送る CSV は合成データにします。実際の CSV を送るときは、応答を手元で絞り、表示も記録もしません（#113）
 - 確かめること：応答の `x-vercel-id` が `hnd1::hnd1::…`（受け付けも処理も東京）、`docs/design.md` 7.1 のヘッダーと
   `X-Robots-Tag: noindex, nofollow`、検査の結果
+- `/_next/image` が閉じていること：`/_next/image?url=%2F&w=64&q=75` を `GET` で送り、存在しない path と同じ 404 のページ
+  （nonce 付きの `Content-Security-Policy`）が返ることを確かめます。Vercel は画像の最適化を基盤の側で受けるので、手元の
+  `next start` と同じ結果とは限りません（#248）
+- ページが `GET`・`HEAD` だけを受けること：`/` に合成の値の `Next-Action` ヘッダーを付けた `POST` を送り、405（`Allow: GET, HEAD`）が返り、
+  Logs にその要求の `Error:` とスタックトレースが出ないことを確かめます（#257）
 - 関数の実行時間と最大実行時間は、Logs → Request Logs で要求の行を開き、「Execution Duration / Maximum」で見ます
 - 配備ごとの URL は、Deployments で配備を開いた画面の Domains にあります。`main` の最新の配備は、ブランチの別名の URL でも開けます
 
