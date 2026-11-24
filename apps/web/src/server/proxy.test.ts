@@ -25,3 +25,16 @@ test.each(["GET", "HEAD"])("ページへの %s は、nonce 付きの CSP を付�
   expect(response.headers.get("x-middleware-next")).toBe("1");
   expect(response.headers.get("Content-Security-Policy")).toMatch(/'nonce-[^']+'/);
 });
+
+test("ページの CSP は、応答と描画へ渡す要求の両方に同じ nonce で付き、本番では eval と inline を許さない", () => {
+  const response = proxy(request("GET"));
+  const policy = response.headers.get("Content-Security-Policy");
+  expect(policy).toMatch(/'nonce-[^']+'/);
+  // Next.js reads the policy and the nonce from these request headers while rendering.
+  expect(response.headers.get("x-middleware-request-content-security-policy")).toBe(policy);
+  const nonce = response.headers.get("x-middleware-request-x-nonce");
+  expect(nonce).not.toBeNull();
+  expect(policy).toContain(`'nonce-${nonce}'`);
+  expect(policy).not.toContain("'unsafe-eval'");
+  expect(policy).not.toContain("'unsafe-inline'");
+});

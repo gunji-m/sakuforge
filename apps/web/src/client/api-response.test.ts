@@ -1,5 +1,10 @@
 import { expect, test } from "vitest";
-import { parseApiError, parseInspectResponse } from "./api-response";
+import {
+  MAX_FINDINGS,
+  MAX_UNKNOWN_CODES,
+  parseApiError,
+  parseInspectResponse,
+} from "./api-response";
 import {
   aggregated,
   aggregation,
@@ -258,4 +263,90 @@ test("省略のある検査NGは、返した分が総数より少なくても受
     }),
   );
   expect(parsed).toMatchObject({ result: "inspection_failed", inspection: { truncated: true } });
+});
+
+// Upper limits the screen enforces on its own (#251): one past the limit is rejected.
+function withSectors(count: number) {
+  const sectors = Array.from({ length: count }, (_, index) => ({
+    code: String(index + 1),
+    name: `合成業種${index + 1}`,
+    ratio: index === 0 ? "100.00" : "0.00",
+    held: index === 0,
+  }));
+  return aggregated({
+    aggregation: aggregation({ sector33: { status: "computed", sectors } }),
+  });
+}
+
+test("業種の行は 100 件まで受け付け、101 件を拒否する", () => {
+  expect(parseInspectResponse(withSectors(100))).not.toBeNull();
+  expect(parseInspectResponse(withSectors(101))).toBeNull();
+});
+
+function withUnknownCodes(count: number) {
+  const unknownCodes = Array.from({ length: count }, () => "9A9A");
+  return aggregated({
+    inspection: inspection({
+      stockCodeMatch: { status: "checked", unknownCodes, unknownCount: count },
+    }),
+  });
+}
+
+test("未知の証券コードは MAX_UNKNOWN_CODES 件まで受け付け、1 件多い応答を拒否する", () => {
+  expect(parseInspectResponse(withUnknownCodes(MAX_UNKNOWN_CODES))).not.toBeNull();
+  expect(parseInspectResponse(withUnknownCodes(MAX_UNKNOWN_CODES + 1))).toBeNull();
+});
+
+const warning = {
+  code: "stock_code_unknown",
+  severity: "warning",
+  message: "合成の固定文言",
+};
+
+function withWarnings(returned: number, total: number) {
+  return aggregated({
+    inspection: inspection({
+      findings: Array.from({ length: returned }, () => warning),
+      warningCount: total,
+      totalCount: total,
+      returnedCount: returned,
+      truncated: returned < total,
+    }),
+  });
+}
+
+test("所見は MAX_FINDINGS 件まで受け付け、1 件多い応答を拒否する", () => {
+  expect(parseInspectResponse(withWarnings(MAX_FINDINGS, MAX_FINDINGS))).not.toBeNull();
+  expect(parseInspectResponse(withWarnings(MAX_FINDINGS + 1, MAX_FINDINGS + 1))).toBeNull();
+});
+
+test("返ってきた warning の数が warningCount を超える応答を拒否する", () => {
+  // Truncated, so the totals alone agree: 2 errors in total, but 1 warning came back.
+  const body = inspectionFailed({
+    inspection: inspection({
+      valid: false,
+      findings: [warning],
+      errorCount: 2,
+      warningCount: 0,
+      totalCount: 2,
+      returnedCount: 1,
+      truncated: true,
+    }),
+  });
+  expect(parseInspectResponse(body)).toBeNull();
+});
+
+test("省略が無いのに、返ってきた error の数が errorCount と合わない応答を拒否する", () => {
+  const body = inspectionFailed({
+    inspection: inspection({
+      valid: false,
+      findings: [failedFinding, warning],
+      errorCount: 2,
+      warningCount: 0,
+      totalCount: 2,
+      returnedCount: 2,
+      truncated: false,
+    }),
+  });
+  expect(parseInspectResponse(body)).toBeNull();
 });
