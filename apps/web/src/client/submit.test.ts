@@ -137,3 +137,7 @@ test("時間内に終われば時計を残さない", async () => {
   expect(outcome).toMatchObject({ kind: "response" });
   expect(vi.getTimerCount()).toBe(0);
 });
+
+test("画面の側の時間切れは、設計 6.5 のとおり 60 秒", () => {
+  expect(SUBMIT_TIMEOUT_MS).toBe(60_000);
+});

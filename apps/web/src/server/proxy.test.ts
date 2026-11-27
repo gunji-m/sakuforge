@@ -38,3 +38,10 @@ test("ページの CSP は、応答と描画へ渡す要求の両方に同じ no
   expect(policy).not.toContain("'unsafe-eval'");
   expect(policy).not.toContain("'unsafe-inline'");
 });
+
+test("nonce は応答ごとに変わる", () => {
+  const first = proxy(request("GET")).headers.get("x-middleware-request-x-nonce");
+  const second = proxy(request("GET")).headers.get("x-middleware-request-x-nonce");
+  expect(first).not.toBeNull();
+  expect(first).not.toBe(second);
+});
