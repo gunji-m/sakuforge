@@ -36,3 +36,17 @@ test.each(["package.json", "apps/web/package.json"])(
     expect(engines?.node).toBe(`${major}.x`);
   },
 );
+
+// Node 26 ships without Corepack, so CI, the Dev Container and README install a pinned version (#261).
+test("CI, the Dev Container and README install the same pinned Corepack version", () => {
+  const versions = [".github/workflows/ci.yml", ".devcontainer/devcontainer.json", "README.md"].map(
+    (path) => {
+      const found = [...read(path).matchAll(/corepack@([^\s`"]+)/g)].map((match) => match[1]);
+      expect(found.length, path).toBeGreaterThan(0);
+      return found;
+    },
+  );
+  const all = versions.flat();
+  expect(all[0]).toMatch(/^[0-9]+\.[0-9]+\.[0-9]+$/);
+  expect(new Set(all).size).toBe(1);
+});
