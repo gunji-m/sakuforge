@@ -54,3 +54,10 @@ test.each(["GET", "HEAD"])(
     expect(response.headers.get("x-middleware-request-x-nonce")).toBeNull();
   },
 );
+
+test("nonce は応答ごとに変わる", () => {
+  const first = proxy(request("GET")).headers.get("x-middleware-request-x-nonce");
+  const second = proxy(request("GET")).headers.get("x-middleware-request-x-nonce");
+  expect(first).not.toBeNull();
+  expect(first).not.toBe(second);
+});
