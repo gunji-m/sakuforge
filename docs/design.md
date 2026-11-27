@@ -428,7 +428,7 @@ stateDiagram-v2
 
 | 守る対象 | Vercel（基盤） | サーバー関数 | core（`packages/core`） | 画面 | 開発者（生成・配備・運用） | 規則の正本 |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1. 要求が続くことによる資源・無料枠の枯渇 | 主：基盤の DDoS 対策と、検査 API への WAF のレート制限 | — | — | — | 安全網：使用量を確かめる手順と、手で止める・戻す手順 | — |
+| 1. 要求が続くことによる資源・無料枠の枯渇 | 主：基盤の DDoS 対策と、検査 API とページへの WAF のレート制限 | — | — | — | 安全網：使用量を確かめる手順と、手で止める・戻す手順 | — |
 | 2. 1 回の要求による時間・メモリの使いすぎ | 安全網：本文 4.5 MB 超の 413、`maxDuration`、メモリの上限 | 主：上限+1 byte までしか読まず、core へバイト列で渡す | 主：処理量を入力の長さより膨らませず、行・列・所見の上限で止める。時計は持たない | — | 安全網：`maxDuration` 10 秒とリージョン `hnd1` をリポジトリ（`route.ts`・`vercel.json`）に書いて設定する（値の根拠は #20 の実測、[5](#5-vercel-の関数で処理するときの上限)） | [ドメイン規則](domain-rules.md)の1節、[入力を信用しない原則](input-trust-principles.md)の2節 |
 | 3. 利用者データ・秘密・銘柄マスターの意図しない保存・流出 | — | 主：CSV と結果を残さず、ログは安全な項目だけにし、応答に `Cache-Control: no-store` を付け、銘柄マスターを応答に含めない | 主：戻り値に保有明細・セルの値・CSV の原文・例外の文言を含めない | 主：結果を外部へ送らず、ファイル名をサーバーへ送らない | 安全網：秘密と銘柄マスターをリポジトリと配布物に入れず、配備のときに残るものを確かめる | [入力を信用しない原則](input-trust-principles.md)の3節、[外部データとの約束](external-data-policy.md)の4節 |
 | 4. 壊れた銘柄マスターや基準日の取り違えによる誤分類 | — | 主：読み込んだ JSON を検証してから core へ渡し、壊れていれば固定の code で拒否する | 安全網：不正な銘柄マスターでは集計を拒否する | 安全網：出典と基準日を表示する | 主：build のときに全項目を検証し、失敗したら配備しない。生成のときは形の最小限の確認だけ | [外部データとの約束](external-data-policy.md)の2節・3節、[4](#4-銘柄マスター-json-の流れ) |
@@ -437,6 +437,9 @@ stateDiagram-v2
 
 - 1 は、枯渇を軽減し、それでも残る停止は無料のあいだ受け入れる（有料化するとき、または実行環境に課金し始めるときに見直す）。
   独自のレート制限と、そのための保存先は作らない
+- 1 の WAF のレート制限は、検査 API とページ（`/`、存在しない path の 404、使っていない画像の最適化の入口 `/_next/image`）の両方を、1 つの規則で対象にする（2026-11-22、#230 の案 B）。
+  ページも要求のたびにサーバーで描き、`proxy.ts` も動く（ADR 0004 の 2026-11-18 の追記）ので、ページへの要求を続けるだけでも関数の枠が減るため。
+  Hobby のレート制限の規則は 1 つで、しきい値も 1 つになる（検査 API だけを厳しくはできない）。条件と値は[運用手順](operations.md)の 1 節にある
 - 3 で、利用者の環境（ブラウザの拡張機能、端末の共用、ブラウザの同期）は利用者の責務で、どの層も受け持たない
 - Vercel の WAF・Pause Project の使える範囲と、ログ・環境変数に残るものは、配備（#114）で確かめる。確かめる手順は
   [運用手順](operations.md)の 2 節、止める手順は 4 節にある
@@ -452,14 +455,17 @@ stateDiagram-v2
 | すべての応答 | `Referrer-Policy` | `no-referrer` |
 | すべての応答 | `X-Frame-Options` | `DENY` |
 | すべての応答 | `X-Robots-Tag` | `noindex, nofollow` |
-| ページ（存在しない path の 404 を含む） | `Content-Security-Policy` | 応答ごとの nonce を付けた script と style、同じ出所の読み込みと通信だけを許す。inline のコードと `eval` は許さない |
+| ページ（存在しない path と `/_next/image` の 404 を含む） | `Content-Security-Policy` | 応答ごとの nonce を付けた script と style、同じ出所の読み込みと通信だけを許す。inline のコードと `eval` は許さない |
 | 検査 API と、`/api/` の下の存在しない path の 404 | `Content-Security-Policy` | `default-src 'none'; frame-ancestors 'none'` |
 | 静的なアイコン（`/icon.svg`） | `Content-Security-Policy` | 検査 API と同じ値。ページ用の nonce 付きの値は付けない（#139） |
 | 第三者のライセンスの表示（`/third-party-notices.txt`） | `Content-Security-Policy` | 検査 API と同じ値。ページ用の nonce 付きの値は付けない（#73） |
+| ページへの `GET`・`HEAD` 以外の要求（存在しない path を含む） | `Content-Security-Policy`、`Allow` | 405 を返し、検査 API と同じ CSP と `Allow: GET, HEAD` を付ける。Next.js まで通さないので、Server Action の形の `POST` で要求のヘッダーの文字とスタックトレースが関数のログに書かれることはない（`apps/web/proxy.ts`、#257） |
 
 - ページには `robots` の meta（`noindex, nofollow`）も入れる
 - nonce を応答ごとに変えるため、ページは要求のたびに描画する（静的に生成しない）
 - 開発のときだけ、React が使う `eval` と、編集中に差し込まれる style を許す
+- 画像の最適化（`next/image`）は使わないので、`next.config.ts` の `images.unoptimized` で入口 `/_next/image` を閉じる。
+  開いたままだと、`url` にページの path を入れて内部でページを描かせられるため（#248）。`/_next/image` は、ほかの存在しない path と同じ 404 のページになる
 - `/api/` の下の存在しない path（`/api/nope` など）の 404 は、ページ用の 404 の HTML を返すが、ヘッダーは検査 API と同じ値になる。nonce を付ける処理（`apps/web/proxy.ts`）が `api/` を除き、`next.config.ts` が `/api/:path*` に検査 API 用の値を付けるため。スタイルとスクリプトが読めず文字だけの画面になるが、安全な側の動きなので、このままにする（#176）
 - 配備した先でヘッダーが付いていることは、[運用手順](operations.md)の 2 節の手順で確かめる（#114）
 

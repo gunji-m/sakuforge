@@ -59,7 +59,8 @@
 
 ### このリポジトリの補足
 
-- 確認なしで進めてよい範囲：Issue の完了条件の中での `packages/core` の実装とテスト、Issue の完了条件の中での `apps/web` の実装とテスト（画面の表示・部品・CSS・文言、応答の読み取り。サーバー関数、応答ヘッダーと CSP、ブラウザへの保存は `AGENTS.md` の Human approval に当たる）、合成データによるテスト、規則を変えない文書の修正、Issue の状態とコメントの更新
+- 確認なしで進めてよい範囲（公開の前）：Issue の完了条件の中での `packages/core` の実装とテスト、Issue の完了条件の中での `apps/web` の実装とテスト（画面の表示・部品・CSS・文言、応答の読み取り。サーバー関数、応答ヘッダーと CSP、ブラウザへの保存は `AGENTS.md` の Human approval に当たる）、合成データによるテスト、規則を変えない文書の修正、Issue の状態とコメントの更新
+- 公開の後（Vercel の本番のドメインへの自動の割り当てをオンに戻した時点から。[`docs/operations.md`](operations.md) 1 節）は、配備物に入るコード（`apps/web` と `packages/core` のうち、テスト以外のファイル）に触れる PR を、`AGENTS.md` の Human approval に入れる。merge が人の目を通らずに本番へ出るため。テストだけ・文書だけの PR は今のまま（#250、2026-11-24）
 - branch、PR、merge の規則は [`docs/git-workflow.md`](git-workflow.md) にある。
 
 ### 本人以外が書いた Issue・PR・コメント

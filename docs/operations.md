@@ -1,6 +1,6 @@
 # 運用手順
 
-Vercel に載せたアプリを、確かめる・公開する・止める・戻す・使用量を見る・秘密を入れ替える・月次の銘柄マスターの更新を確かめるための手順です（#114、#201）。
+Vercel に載せたアプリを、確かめる・公開する・止める・戻す・使用量を見る・やめる・秘密を入れ替える・月次の銘柄マスターの更新を確かめるための手順です（#114、#201）。
 [設計](design.md)の 7 節で「開発者：安全網」とした操作を、ここに書きます。Vercel の設定と秘密の操作は、
 すべて本人が行います（`AGENTS.md` の Human approval）。
 
@@ -14,11 +14,12 @@ Vercel に載せたアプリを、確かめる・公開する・止める・戻�
 | プラン | Hobby（非商用・無課金・宣伝なしの間だけ） | [ADR 0006](decisions/0006-unlisted-public-release.md) |
 | Root Directory | `apps/web` | Vercel の画面 |
 | Build Command | `pnpm run build`（銘柄マスターの取得を含む。`next build` で上書きしない） | `apps/web/package.json` |
-| Node・pnpm | Node は `engines` の `24.x`、pnpm は `packageManager` の版（Vercel は両方を読む） | `package.json` |
+| Node・pnpm | Node は `engines` の `26.x`、pnpm は `packageManager` の版（Vercel は両方を読む） | `package.json` |
 | 関数のリージョン・最大実行時間 | `hnd1`（東京）・10 秒 | リージョンは `apps/web/vercel.json` の `regions`、最大実行時間は `apps/web/app/api/inspect/route.ts` の `maxDuration`。[設計](design.md)の 5 節 |
 | 本番のブランチ | `main`。本番のドメインへの自動の割り当て（Auto-assign Custom Production Domains）は今はオフ。オンに戻すと決めた（案 A、#201） | Vercel の画面 |
 | 配備の保護 | Vercel Authentication（Standard Protection） | Vercel の画面 |
 | 環境変数 | `STOCK_MASTER_TOKEN`・`STOCK_MASTER_URL`（Production だけ、Type は Secret） | [設計](design.md)の 4.6 |
+| WAF のレート制限 | 検査 API とページを 1 つの規則で。IP ごとに 60 秒で 30 回を超えたら 429（下の箇条書き） | Vercel の画面。対象と理由は[設計](design.md)の 7 節 |
 
 - リージョンと最大実行時間はコードが正本です。Vercel の画面（Settings → Functions）にも同じ値を入れてあります。
   変えるときは、リージョンは `vercel.json`、最大実行時間は `route.ts` を PR で変え、画面も同じ値に合わせます。画面だけで変えません
@@ -30,6 +31,17 @@ Vercel に載せたアプリを、確かめる・公開する・止める・戻�
 - Build Command を `next build` にすると銘柄マスターの取得が飛ばされ、build が `stock master rejected: unreadable` で
   止まります。`STOCK_MASTER_URL` は GitHub の contents API の形（`https://api.github.com/repos/<owner>/<repo>/contents/<path>`、
   既定以外のブランチなら `?ref=<branch>`）にします。ブラウザの `github.com/.../blob/...` の形だと `http_404` になります（#113）
+- WAF のレート制限は、Firewall → Configure の Rate Limit の規則 1 つで掛けます（Hobby は 1 つまで）。条件は **Request Path** の
+  `Matches expression` で `^/(?!_next/static/|icon\.svg$|third-party-notices\.txt$)` にします（`proxy.ts` の
+  matcher から `api/` の除外を外した形。静的ファイルは数えません）。使っていない画像の最適化の入口 `/_next/image` は、
+  ページの描画を起こせるので数えます（`proxy.ts` の matcher からも外す、#248）。Route（`x-matched-path`）を条件にすると `proxy.ts` の後で
+  評価され、止めた要求でも関数の枠が減るので使いません。数える鍵は IP、窓は固定の 60 秒、しきい値は 30 回、動作は 429 です。
+  ふつうの使い方（ページを開く・取り込む・再読み込みを数回）は 1 分に 10 回ほどで、掛かりません
+- 最初は動作を Log にして Firewall の画面で数え方を確かめてから 429 に切り替え、ブラウザで一度掛けて、ページが 429 のときに
+  見える基盤の本文を確かめます（本人の操作。まだ設定していない、#114）。数え方は region ごとです
+- プロジェクト名（本番の URL の `*.vercel.app` の名前）は変えません（2026-11-22 に本人が決めた、#231）。名前を変えた後や
+  プロジェクトを消した後の古い名前は、第三者が取れうるためです。取られると、同じ URL に偽の画面を出して CSV を集めることも、
+  前の利用者のブラウザに残る保存分（[設計](design.md)の 6.2）を読むこともできます。やめるときの扱いは 4.4 にあります
 
 ## 2. 配備を確かめる
 
@@ -48,6 +60,11 @@ curl -s -i -X POST \
 - 送る CSV は合成データにします。実際の CSV を送るときは、応答を手元で絞り、表示も記録もしません（#113）
 - 確かめること：応答の `x-vercel-id` が `hnd1::hnd1::…`（受け付けも処理も東京）、`docs/design.md` 7.1 のヘッダーと
   `X-Robots-Tag: noindex, nofollow`、検査の結果
+- `/_next/image` が閉じていること：`/_next/image?url=%2F&w=64&q=75` を `GET` で送り、存在しない path と同じ 404 のページ
+  （nonce 付きの `Content-Security-Policy`）が返ることを確かめます。Vercel は画像の最適化を基盤の側で受けるので、手元の
+  `next start` と同じ結果とは限りません（#248）
+- ページが `GET`・`HEAD` だけを受けること：`/` に合成の値の `Next-Action` ヘッダーを付けた `POST` を送り、405（`Allow: GET, HEAD`）が返り、
+  Logs にその要求の `Error:` とスタックトレースが出ないことを確かめます（#257）
 - 関数の実行時間と最大実行時間は、Logs → Request Logs で要求の行を開き、「Execution Duration / Maximum」で見ます
 - 配備ごとの URL は、Deployments で配備を開いた画面の Domains にあります。`main` の最新の配備は、ブランチの別名の URL でも開けます
 
@@ -59,9 +76,11 @@ curl -s -i -X POST \
 
 - 自動の割り当ては、Settings → Environments → Production → Branch Tracking の Auto-assign Custom Production Domains で
   オンに戻します（1 の案 A）。オフの間は、毎回この手順で出します
+- オンに戻した時点から、配備物に入るコードに触れる PR は本人の承認が要ります（`AGENTS.md` の Human approval、#250）。オンに戻したら、
+  進行の Issue（#44）にその日付を書き、agent が承認なしで merge しないようにします
 - 公開したら、合鍵を消します（5.3）
 
-## 4. 止める・戻す・使用量を見る
+## 4. 止める・戻す・使用量を見る・やめる
 
 ### 4.1 手で止める
 
@@ -89,6 +108,13 @@ curl -s -i -X POST \
   `503 DEPLOYMENT_PAUSED` を返します。自動では戻らないので、サポートに連絡するか Pro に移します
 - 有料にしない（ADR 0006）ので、Pro に移すときは ADR を見直してから決めます
 - リージョンを `hnd1` にしてから、無料枠の減り方が変わらないかを見ます（#114）
+
+### 4.4 やめる
+
+- サービスをやめるときも、プロジェクトは消しません。4.1 の Pause Project で止めた状態のまま持ち続けます
+  （2026-11-22 に本人が決めた、#231）。消すと、同じ `*.vercel.app` の名前を第三者が取れうるためです（1）
+- 終了を知らせる版を配るか、どうしても消すときの順番は、やめると決めたときに決めます。ブラウザの保存分を消す版は
+  `apps/web/src/client/storage.ts` に触れるので、そのときに本人の承認を取って作ります（`AGENTS.md` の Human approval）
 
 ## 5. 秘密の入れ替え
 
@@ -131,7 +157,7 @@ curl -s -i -X POST \
 ### 6.1 関数のログの残り方
 
 - Hobby では、関数のログ（Runtime Logs）は 1 時間で消えます。ログを外へ送る Drains は Pro 以上で、Hobby では使えません
-  （Vercel の公式資料「Runtime Logs」「Working with Drains」で 2026-11-20 に確かめた。画面での確認はまだ）
+  （Vercel の公式資料「Runtime Logs」「Working with Drains」で 2026-11-20 に確かめた。2026-11-22 に本人が画面で確かめ、プロジェクトの Logs の Timeline で選べる範囲は 1 時間まで）
 - `internal_error` のときに残るのは固定の理由 1 語だけです（[設計](design.md)の 8.3、#97）。1 時間を過ぎると、これも残りません
 - 失敗の連絡を受けたら、ログで原因を追うより先に、6.2 と同じ合成の CSV で再現するかを確かめます
 

@@ -11,6 +11,8 @@ import { API_CONTENT_SECURITY_POLICY, COMMON_HEADERS } from "./src/server/securi
 const nextConfig: NextConfig = {
   agentRules: false,
   poweredByHeader: false,
+  // The app uses no next/image, so the /_next/image endpoint is closed; it would otherwise render pages internally (#248).
+  images: { unoptimized: true },
   transpilePackages: ["@sakuforge/core"],
   // The Production build writes the real stock master here; ship it with the server function only.
   outputFileTracingIncludes: { "/api/inspect": [`./${REAL_STOCK_MASTER_FILE}`] },
