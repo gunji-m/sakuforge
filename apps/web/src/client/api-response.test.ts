@@ -350,3 +350,19 @@ test("省略が無いのに、返ってきた error の数が errorCount と合�
   });
   expect(parseInspectResponse(body)).toBeNull();
 });
+
+test("返ってきた error の数が errorCount を超える応答を拒否する", () => {
+  // Truncated, so every other count agrees: 1 error and 5 warnings in total, 2 errors came back.
+  const body = inspectionFailed({
+    inspection: inspection({
+      valid: false,
+      findings: [failedFinding, failedFinding],
+      errorCount: 1,
+      warningCount: 5,
+      totalCount: 6,
+      returnedCount: 2,
+      truncated: true,
+    }),
+  });
+  expect(parseInspectResponse(body)).toBeNull();
+});
