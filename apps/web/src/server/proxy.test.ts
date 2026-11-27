@@ -3,8 +3,8 @@ import { expect, test } from "vitest";
 import { proxy } from "../../proxy";
 import { API_CONTENT_SECURITY_POLICY } from "./security-headers";
 
-function request(method: string, headers: Record<string, string> = {}): NextRequest {
-  return new NextRequest("http://localhost/", { method, headers });
+function request(method: string, headers: Record<string, string> = {}, path = "/"): NextRequest {
+  return new NextRequest(`http://localhost${path}`, { method, headers });
 }
 
 test.each(["POST", "PUT", "DELETE", "PATCH", "OPTIONS"])(
@@ -38,3 +38,19 @@ test("ページの CSP は、応答と描画へ渡す要求の両方に同じ no
   expect(policy).not.toContain("'unsafe-eval'");
   expect(policy).not.toContain("'unsafe-inline'");
 });
+
+test.each(["/api/nope", "/api/inspect/x"])("%s への POST は 405 にする", (path) => {
+  const response = proxy(request("POST", { "Next-Action": "SYNTHETIC" }, path));
+  expect(response.status).toBe(405);
+  expect(response.headers.get("Allow")).toBe("GET, HEAD");
+});
+
+test.each(["GET", "HEAD"])(
+  "/api/ の下への %s は、nonce を付けずに通す（CSP は next.config.ts の検査 API の値）",
+  (method) => {
+    const response = proxy(request(method, {}, "/api/nope"));
+    expect(response.headers.get("x-middleware-next")).toBe("1");
+    expect(response.headers.get("Content-Security-Policy")).toBeNull();
+    expect(response.headers.get("x-middleware-request-x-nonce")).toBeNull();
+  },
+);

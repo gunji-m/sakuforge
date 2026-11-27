@@ -33,7 +33,7 @@ Vercel に載せたアプリを、確かめる・公開する・止める・戻�
   既定以外のブランチなら `?ref=<branch>`）にします。ブラウザの `github.com/.../blob/...` の形だと `http_404` になります（#113）
 - WAF のレート制限は、Firewall → Configure の Rate Limit の規則 1 つで掛けます（Hobby は 1 つまで）。条件は **Request Path** の
   `Matches expression` で `^/(?!_next/static/|icon\.svg$|third-party-notices\.txt$)` にします（`proxy.ts` の
-  matcher から `api/` の除外を外した形。静的ファイルは数えません）。使っていない画像の最適化の入口 `/_next/image` は、
+  matcher から `api/inspect` の除外を外した形。静的ファイルは数えません）。使っていない画像の最適化の入口 `/_next/image` は、
   ページの描画を起こせるので数えます（`proxy.ts` の matcher からも外す、#248）。Route（`x-matched-path`）を条件にすると `proxy.ts` の後で
   評価され、止めた要求でも関数の枠が減るので使いません。数える鍵は IP、窓は固定の 60 秒、しきい値は 30 回、動作は 429 です。
   ふつうの使い方（ページを開く・取り込む・再読み込みを数回）は 1 分に 10 回ほどで、掛かりません

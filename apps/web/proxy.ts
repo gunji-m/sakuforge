@@ -17,6 +17,9 @@ export function proxy(request: NextRequest) {
       headers: { Allow: "GET, HEAD", "Content-Security-Policy": API_CONTENT_SECURITY_POLICY },
     });
   }
+  // Paths under /api/ other than the inspect API are not-found pages that keep the API's policy from
+  // next.config.ts (#176). Only the method check above applies to them (#260).
+  if (request.nextUrl.pathname.startsWith("/api/")) return NextResponse.next();
   const nonce = btoa(crypto.randomUUID());
   const policy = pageContentSecurityPolicy(nonce, process.env.NODE_ENV === "development");
 
@@ -30,7 +33,10 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Pages only, including not-found pages for any other path. The API, Next.js's static files, the
-  // static icon and the third-party notices get their headers from next.config.ts.
-  matcher: [{ source: "/((?!api/|_next/static/|icon\\.svg$|third-party-notices\\.txt$).*)" }],
+  // Pages, including not-found pages for any other path (under /api/ too, for the method check). The
+  // inspect API, Next.js's static files, the static icon and the third-party notices get their
+  // headers from next.config.ts.
+  matcher: [
+    { source: "/((?!api/inspect$|_next/static/|icon\\.svg$|third-party-notices\\.txt$).*)" },
+  ],
 };
