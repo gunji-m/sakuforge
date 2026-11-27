@@ -49,3 +49,10 @@ test.each(["/icon.svg", "/third-party-notices.txt"])(
     ]);
   },
 );
+
+test.each(["/api/nope", "/api/inspect/x", "/api/inspectx", "/api/"])(
+  "検査 API 以外の /api/ の下（%s）は、method を確かめるために proxy を通す",
+  (path) => {
+    expect(matches(path)).toBe(true);
+  },
+);
