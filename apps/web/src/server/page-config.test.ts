@@ -6,7 +6,7 @@ import { PHASE_PRODUCTION_SERVER } from "next/constants";
 import { expect, test } from "vitest";
 import { metadata } from "../../app/layout";
 import configFor from "../../next.config";
-import { COMMON_HEADERS } from "./security-headers";
+import { API_CONTENT_SECURITY_POLICY, COMMON_HEADERS } from "./security-headers";
 
 const nextConfig = configFor(PHASE_PRODUCTION_SERVER);
 
@@ -23,4 +23,12 @@ test("X-Powered-By を付けない", () => {
 
 test("ページに robots の meta（noindex, nofollow）を入れる", () => {
   expect(metadata.robots).toEqual({ index: false, follow: false });
+});
+
+test("検査 API と /api/ の下のすべての応答に、何も読み込ませない CSP を付ける", async () => {
+  const rules = (await nextConfig.headers?.()) ?? [];
+  const api = rules.find((rule) => rule.source === "/api/:path*");
+  expect(api?.headers).toEqual([
+    { key: "Content-Security-Policy", value: API_CONTENT_SECURITY_POLICY },
+  ]);
 });
