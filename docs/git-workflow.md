@@ -44,7 +44,10 @@ GitHub の次の設定で守ります。無効にするときは、代わりの�
 - Interaction limits（Settings → Moderation options）で、外部の人の Issue・コメント・PR を止める。制限は最長 6 か月なので、期限の前に本人が更新する
 - 起票の画面では、テンプレートを使わない空の Issue を止め、脆弱性の連絡を [`SECURITY.md`](../SECURITY.md) の窓口へ導く（`.github/ISSUE_TEMPLATE/config.yml`）
 
-上の 2 つの GitHub の画面の設定の今の値は、まだ確かめていません（agent からは見えないため。本人が確かめて、ここに日付を書く）。
+上の 2 つの GitHub の画面の設定の今の値は、2026-11-28 に本人の指示で GitHub の API から読んで確かめました（#200）。
+
+- fork からの PR の workflow の承認：`approval_policy` は `all_external_contributors`（外部の人のすべての PR に承認を求める）
+- Interaction limits：`limit` は `collaborators_only`、`expiry` は `six_months` で、期限は 2027-05-28。期限の前に本人が更新し、ここの期限を書き直す
 
 ## Branch命名
 
